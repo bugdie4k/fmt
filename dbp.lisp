@@ -1,5 +1,31 @@
 (in-package #:fmt)
 
+(defclass+ token ())
+(defclass+ newline-token (token) conditional?)
+(defclass+ delim-token (token) pattern)
+(defclass+ return-token (token) form print?)
+
+(defun token? (arg)
+  (typep arg 'token))
+
+(defun parse-literally (next-args)
+  (values (first next-args)
+          (rest next-args)))
+
+(defun parse-delimiter (next-args)
+  (values (make-instance 'delim-token :pattern
+                         (symbol-name (first next-args)))
+          (rest next-args)))
+
+(defun parse-newline (conditional? next-args)
+  (values (make-instance 'newline-token :conditional? conditional?)
+          next-args))
+
+(defun parse-return (print? next-args)
+  (values (make-instance 'return-token :form (first next-args)
+                         :print? print?)
+          (rest next-args)))
+
 (defstruct keywords
   (section-designators (make-hash-table))
   (markup (make-hash-table))
@@ -30,52 +56,17 @@
                              entries))))
                definitions-by-type))))
 
-(defclass+ token ())
-;; (defclass+ regular-token (token) form)
-(defclass+ newline-token (token) conditional?)
-(defclass+ delim-token (token) pattern)
-(defclass+ return-token (token) form print?)
-
 (defkeywords
     (:section-designators
-     (:prefix
-      "p>")
-     (:message
-      "m>"))
+     (:prefix "p>")
+     (:message "m>"))
     (:markup
-     (:literally
-      "l"
-      (lambda (next-args)
-        (values (first next-args)
-                (rest next-args))))
-     (:delimiter
-      "d"
-      (lambda (next-args)
-        (values (make-instance 'delim-token :pattern
-                                  (symbol-name (first next-args)))
-                (rest next-args))))
-     (:newline
-      "nl"
-      (lambda (next-args)
-        (values (make-instance 'newline-token :conditional? nil)
-                next-args)))
-     (:conditional-newline
-      "cnl"
-      (lambda (next-args)
-        (values (make-instance 'newline-token :conditional? t)
-                next-args)))
-     (:return
-      "r"
-      (lambda (next-args)
-        (values (make-instance 'return-token :form (first next-args)
-                                   :print? nil)
-                (rest next-args))))
-     (:print-return
-      "pr"
-      (lambda (next-args)
-        (values (make-instance 'return-token :form (first next-args)
-                                   :print? t)
-                (rest next-args))))))
+     (:literally "l" #'parse-literally)
+     (:delimiter "d" #'parse-delimiter)
+     (:newline "nl" (curry #'parse-newline nil))
+     (:conditional-newline "cnl" (curry #'parse-newline t))
+     (:return "r" (curry #'parse-return nil))
+     (:print-return "pr" (curry #'parse-return t))))
 
 (defun symbol-name? (arg)
   (and (symbolp arg) (symbol-name arg)))
