@@ -164,3 +164,6 @@ DESCRIPTION
       (parse-fmt-args args)
     (fmts-aux stream newline? fmt-lists
               :translate? nil)))
+
+(defmacro tbl (&rest args)
+  )

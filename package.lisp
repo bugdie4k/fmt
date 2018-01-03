@@ -4,7 +4,11 @@
   (:import-from #:alexandria
                 #:mappend
                 #:switch
-                #:aif)
+                #:symbolicate
+                #:mappend
+                #:curry
+                #:hash-table-values
+                #:hash-table-alist)
   (:export
    ;; fmt
    #:fmt

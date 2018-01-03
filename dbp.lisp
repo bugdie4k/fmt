@@ -1,53 +1,149 @@
 (in-package #:fmt)
 
-(defstruct regular-token form)
+(defstruct keywords
+  (section-designators (make-hash-table))
+  (markup (make-hash-table))
+  (options (make-hash-table)))
 
-(defstruct newline conditional?)
+(defvar *keywords* (make-keywords))
 
-(defstruct delim pattern)
+(defmacro defkeywords (&rest definitions-by-type)
+  (flet ((%accessor (slot-kw)
+           (ecase slot-kw
+             ((:section-designators :markup :options)
+              (symbolicate :keywords- slot-kw))))
+         (%add-keyword (accessor name value)
+           `(setf
+             (gethash ,name (,accessor *keywords*))
+             ,value)))
+    `(progn ,@(mappend
+               (lambda (definition)
+                 (destructuring-bind (keyword-type &rest entries) definition
+                   (let ((accessor (%accessor keyword-type)))
+                     (mapcar
+                      (lambda (entry)
+                        (destructuring-bind (name &rest value) entry
+                          (let ((value (if (cdr value)
+                                           `(list ,@value)
+                                           (car value))))
+                            (%add-keyword accessor name value))))
+                             entries))))
+               definitions-by-type))))
 
-(defstruct parsed prefix msg)
+(defclass+ token ())
+;; (defclass+ regular-token (token) form)
+(defclass+ newline-token (token) conditional?)
+(defclass+ delim-token (token) pattern)
+(defclass+ return-token (token) form print?)
 
-(defun maybe-lexem? (arg)
+(defkeywords
+    (:section-designators
+     (:prefix
+      "p>")
+     (:message
+      "m>"))
+    (:markup
+     (:literally
+      "l"
+      (lambda (next-args)
+        (values (first next-args)
+                (rest next-args))))
+     (:delimiter
+      "d"
+      (lambda (next-args)
+        (values (make-instance 'delim-token :pattern
+                                  (symbol-name (first next-args)))
+                (rest next-args))))
+     (:newline
+      "nl"
+      (lambda (next-args)
+        (values (make-instance 'newline-token :conditional? nil)
+                next-args)))
+     (:conditional-newline
+      "cnl"
+      (lambda (next-args)
+        (values (make-instance 'newline-token :conditional? t)
+                next-args)))
+     (:return
+      "r"
+      (lambda (next-args)
+        (values (make-instance 'return-token :form (first next-args)
+                                   :print? nil)
+                (rest next-args))))
+     (:print-return
+      "pr"
+      (lambda (next-args)
+        (values (make-instance 'return-token :form (first next-args)
+                                   :print? t)
+                (rest next-args))))))
+
+(defun symbol-name? (arg)
   (and (symbolp arg) (symbol-name arg)))
 
-(defun parse-args (args &key upto)
+(defun section-designator? (arg)
+  (let ((arg-name (symbol-name? arg)))
+    (find-if (curry #'string-equal arg-name)
+             (hash-table-values
+              (keywords-section-designators *keywords*)))))
+
+(defun switch-markup (lexem next-args)
+  (dolist (entry (hash-table-alist (keywords-markup *keywords*)))
+    (destructuring-bind (name . (value parse-fn)) entry
+      (declare (ignore name))
+      (when (string-equal value lexem)
+        (return (funcall parse-fn next-args))))))
+
+(defun parse-markup (args)
   (labels ((%switch (lexem args)
-             (let ((next-args (rest args)))
+             (let* ((next-args (rest args)))
                (if (string-equal (subseq lexem 0 1) "d")
-                   (values (make-delim :pattern (subseq lexem 1)))
-                   (switch (lexem :test #'string-equal)               
-                     ("l" (values (make-regular-token :form (first next-args))
-                                  (rest next-args)))
-                     ("nl" (values (make-newline :conditional? nil)
-                                   next-args))
-                     ("cnl" (values (make-newline :conditional? t)
-                                    next-args))
-                     (t (values (make-regular-token :form (first args))))))))
-           (%parse (args tokens)
+                   ;; NOTE: special syntax for d
+                   (values (make-instance 'delim-token
+                                          :pattern (subseq lexem 1))
+                           next-args)
+                   (multiple-value-bind (markup-token? rest-args)
+                       (switch-markup lexem next-args)
+                     (if markup-token?
+                         (values markup-token? rest-args)
+                         (values (first args)
+                                 next-args))))))
+           (%parse (args &optional tokens)
              (if (not args)
                  (values tokens nil)
-                 (aif (maybe-lexem? (first args))
-                      (if (and upto (string-equal it upto))
+                 (aif (symbol-name? (first args))
+                      (if (section-designator? (first args))
                           (values tokens args)
-                          (progn 
-                            (multiple-value-bind (token rest-args)
-                                (%switch it args))
-                            ))))))))
+                          (multiple-value-bind (token rest-args)
+                              (%switch it args)
+                            (%parse rest-args (cons token tokens))))
+                      (%parse (rest args)
+                              (cons (first args)
+                                    tokens))))))
+    (multiple-value-bind (rev-token-list rest-args)
+        (%parse args)
+      (values (reverse rev-token-list) rest-args))))
 
-(defun parse-dbp-args (args)
-  (labels ((%parse (args parsed)
-             (if (not args)
-                 (values parsed nil)
-                 (aif (maybe-lexem? (first args))
-                      (progn (switch (it :test #'string-equal)
-                               ("p>" (multiple-value-bind (res rest-args)
-                                         (parse-args args :upto "m>")
-                                       (setf (parsed-prefix parsed) res)
-                                       (%parse rest-args parsed)))
-                               ("m>" (multiple-value-bind (res rest-args)
-                                         (parse-args args)
-                                       (setf (parsed-msg parsed) res)
-                                       (%parse rest-args parsed)))))
-                      (values parsed args)))))
-    (%parse cluses parsed)))
+(defun switch-section-designators (lexem)  
+  (dolist (entry (hash-table-alist (keywords-section-designators *keywords*)))
+    (destructuring-bind (name . value) entry      
+      (when (string-equal value lexem)
+        (return (intern (symbol-name name) :fmt))))))
+
+(defclass+ parsed-sections ()
+  prefix message)
+
+(defun parse-sections (args
+                       &optional (parsed (make-instance 'parsed-sections)))  
+  (if (not args)
+      (values parsed nil)
+      (multiple-value-bind (slot-name-sym args-to-parse)
+          (aif (aand (symbol-name? (first args))
+                     (switch-section-designators it))
+               (values it (rest args))
+               ;; NOTE: if no section is specified as the first arg
+               ;;       -> it's message ('m>') section
+               (values 'message args))
+        (multiple-value-bind (token-list rest-args)
+            (parse-markup args-to-parse)          
+          (setf (slot-value parsed slot-name-sym) token-list)
+          (parse-sections rest-args parsed)))))
