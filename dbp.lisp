@@ -26,18 +26,18 @@
                          :print? print?)
           (rest next-args)))
 
-(defstruct keywords
+(defclass+ keywords ()
   (section-designators (make-hash-table))
   (markup (make-hash-table))
   (options (make-hash-table)))
 
-(defvar *keywords* (make-keywords))
+(defvar *keywords* (make-instance 'keywords))
 
 (defmacro defkeywords (&rest definitions-by-type)
   (flet ((%accessor (slot-kw)
            (ecase slot-kw
              ((:section-designators :markup :options)
-              (symbolicate :keywords- slot-kw))))
+              (intern (symbol-name slot-kw)))))
          (%add-keyword (accessor name value)
            `(setf
              (gethash ,name (,accessor *keywords*))
@@ -75,17 +75,17 @@
   (let ((arg-name (symbol-name? arg)))
     (find-if (curry #'string-equal arg-name)
              (hash-table-values
-              (keywords-section-designators *keywords*)))))
+              (section-designators *keywords*)))))
 
-(defun switch-markup (lexem next-args)
-  (dolist (entry (hash-table-alist (keywords-markup *keywords*)))
+(defun parse-markup-lexem (lexem next-args)
+  (dolist (entry (hash-table-alist (markup *keywords*)))
     (destructuring-bind (name . (value parse-fn)) entry
       (declare (ignore name))
       (when (string-equal value lexem)
         (return (funcall parse-fn next-args))))))
 
 (defun parse-markup (args)
-  (labels ((%switch (lexem args)
+  (labels ((%parse-lexem (lexem args)
              (let* ((next-args (rest args)))
                (if (string-equal (subseq lexem 0 1) "d")
                    ;; NOTE: special syntax for d
@@ -93,7 +93,7 @@
                                           :pattern (subseq lexem 1))
                            next-args)
                    (multiple-value-bind (markup-token? rest-args)
-                       (switch-markup lexem next-args)
+                       (parse-markup-lexem lexem next-args)
                      (if markup-token?
                          (values markup-token? rest-args)
                          (values (first args)
@@ -105,7 +105,7 @@
                       (if (section-designator? (first args))
                           (values tokens args)
                           (multiple-value-bind (token rest-args)
-                              (%switch it args)
+                              (%parse-lexem it args)
                             (%parse rest-args (cons token tokens))))
                       (%parse (rest args)
                               (cons (first args)
@@ -114,8 +114,8 @@
         (%parse args)
       (values (reverse rev-token-list) rest-args))))
 
-(defun switch-section-designators (lexem)  
-  (dolist (entry (hash-table-alist (keywords-section-designators *keywords*)))
+(defun section-slot-name (lexem)  
+  (dolist (entry (hash-table-alist (section-designators *keywords*)))
     (destructuring-bind (name . value) entry      
       (when (string-equal value lexem)
         (return (intern (symbol-name name) :fmt))))))
@@ -129,7 +129,7 @@
       (values parsed nil)
       (multiple-value-bind (slot-name-sym args-to-parse)
           (aif (aand (symbol-name? (first args))
-                     (switch-section-designators it))
+                     (section-slot-name it))
                (values it (rest args))
                ;; NOTE: if no section is specified as the first arg
                ;;       -> it's message ('m>') section
