@@ -9,7 +9,7 @@
 
 (defmacro awhen (test-form &body body)
   "Anaphoric when: use `it' in body to
-   refer to result of the test-form."   ; LMH
+   refer to result of the test-form."
   `(aif ,test-form
         (progn ,@body)))
 
@@ -43,7 +43,7 @@ and type as third."
 
 (defgeneric traverse-slots (obj fn)
   (:documentation
-   "Use fn function on each slot. 
+   "Use fn function on each slot.
 'fn' must take two parameters: slot-name and slot-value."))
 
 (defmethod traverse-slots (obj fn)

@@ -269,7 +269,7 @@ control-string, format-argument, return-form, return-form-print?"))
 
   (defmethod translate-token ((tok delim-token) options)
     (let* ((delim-len (gethash :delimiter-length options))
-           (pattern (double-tildes (pattern tok)))
+           (pattern (pattern tok))
            (pattern-len (length pattern)))
       (flet ((%make-delim ()
                (with-output-to-string (s)
@@ -298,14 +298,14 @@ control-string, format-argument, return-form, return-form-print?"))
   (defun translate-tokens (token-list options)
     "Translates markup token list to format form"
     (labels ((%translate (token-list
-                          &optional format-chars format-args returns)
+                          &optional format-control-chars format-args returns)
                (if (not token-list)
-                   (values (coerce format-chars 'string)
+                   (values (coerce format-control-chars 'string)
                            (reverse format-args)
                            (reverse returns))
                    (multiple-value-bind (f-str f-arg return return-printing?)
                        (translate-token (first token-list) options)
-                     (let* ((format-chars (append format-chars
+                     (let* ((format-control-chars (append format-control-chars
                                                   (coerce f-str 'list)))
                             (format-args (if f-arg
                                              (cons f-arg format-args)
@@ -316,10 +316,14 @@ control-string, format-argument, return-form, return-form-print?"))
                                              (cons return returns))
                                          returns)))
                        (%translate (rest token-list)
-                                   format-chars
+                                   format-control-chars
                                    format-args
                                    returns))))))
-      (%translate token-list)))
+      (multiple-value-bind (format-control-string format-args returns)
+          (%translate token-list)
+        ;; TODO
+        (values `(format nil ,format-control-string ,@format-args)
+                returns))))
 
   ) ; eval-when
 

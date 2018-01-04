@@ -3,15 +3,15 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun parse-initial-keywords (args &rest keywords)
     (let ((keywords-ht (make-hash-table)))
-      (labels ((%kw (kw-el)
-                 (if (listp kw-el) (first kw-el) kw-el))
-               (%num (kw-el)
-                 (if (listp kw-el) (second kw-el) 0))
-               (%default (kw-el)
-                 (if (listp kw-el) (third kw-el) nil))
+      (labels ((%keyword (keyword-el)
+                 (if (listp keyword-el) (first keyword-el) keyword-el))
+               (%num-to-take (keyword-el)
+                 (if (listp keyword-el) (second keyword-el) 0))
+               (%default-value (keyword-el)
+                 (if (listp keyword-el) (third keyword-el) nil))
                (%find ()
-                 (find-if (curry #'eq (first args)) keywords :key #'%kw))
-               (%take (num)
+                 (find-if (curry #'eq (first args)) keywords :key #'%keyword))
+               (%take-next-args (num)
                  (cond ((= num 0)
                         (prog1 (first args)
                           (setf args (rest args))))
@@ -23,27 +23,30 @@
                           (setf args (nthcdr (1+ num) args))))))
                (%try-parse-kw ()
                  (awhen (%find)
-                   (setf (gethash (%kw it) keywords-ht)
-                         (%take (%num it))))))
+                   (setf (gethash (%keyword it) keywords-ht)
+                         (%take-next-args (%num-to-take it))))))
         (dotimes (i (length keywords))
           (unless (%try-parse-kw)
             (return)))
-        (append (loop :for kw :in keywords
-                   :collect
-                     (multiple-value-bind (val set?)
-                         (gethash (%kw kw) keywords-ht)
-                       (if set? val (%default kw))))
-                (list args)))))
+        (append
+         (loop
+            :for kw :in keywords
+            :collect
+              (multiple-value-bind (val found?)
+                  (gethash (%keyword kw) keywords-ht)
+                (if found? val (%default-value kw))))
+         (list args)))))
 
   (defun fmt->format (fmt-string)
     (let ((fmt-string (if (stringp fmt-string)
                           fmt-string
                           (write-to-string fmt-string))))
       (concatenate 'string
-                   (loop for ch across fmt-string
-                      collecting (cond ((char-equal ch #\~) #\:)
-                                       ((char-equal ch #\:) #\~)
-                                       (t ch))))))
+                   (loop
+                      :for ch :across fmt-string
+                      :collect (cond ((char-equal ch #\~) #\:)
+                                     ((char-equal ch #\:) #\~)
+                                     (t ch))))))
 
   (defun transform-fmt-str-form (fmt-str-form
                                  &key delimiter newline? translate?)
