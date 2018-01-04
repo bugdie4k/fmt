@@ -63,7 +63,7 @@
                                 format-str-form)))
       `(format ,stream ,format-str-form ,@fmt-args)))
 
-  (defun fmts-aux (stream newline? fmt-lists &key (translate? t))    
+  (defun fmts-aux (stream newline? fmt-lists &key (translate? t))
     (let* ((stream-sym (gensym "STREAM"))
            (stream-src (or stream '(make-string-output-stream))))
       (flet ((%make-format-call (fmt-list newline?)
@@ -85,10 +85,11 @@
   "SYNOPSIS
       (fmt [ :s stream ] [ :nl ] fmt-string fmt-args)
 DESCRIPTION
-      Does the same as format, but ~ (tilde) and : (colon)
-      are swapped in format-string (fmt-string).
+      `fmt-string' is the same as control-string in format,
+      but with ~ (tilde) and : (colon) swapped.
       You can omit stream argument - t is default.
-      `:nl' adds newline in the end (same as :% would)."
+      `:nl' adds newline in the end (same as :% would).
+      Does the same as format - prints to stream."
   (multiple-value-bind (stream newline? fmt-string/args)
       (parse-fmt-args args)
     (fmt-aux stream newline? (first fmt-string/args) (rest fmt-string/args)
@@ -98,8 +99,10 @@ DESCRIPTION
   "SYNOPSIS
        (fmt4l [ :s stream ] [ :nl ] fmt-string fmt-args)
 DESCRIPTION
-       Applies fmt-string to each arg in fmt-args.
-       To put it simply, multiplies fmt-string by the number of arguments.
+       `fmt-string' is the same as control-string in format,
+       but with ~ (tilde) and : (colon) swapped.
+       Applies `fmt-string' to each arg in fmt-args.
+       To put it simply, multiplies `fmt-string' by the number of arguments.
        `:nl' adds newline."
   (multiple-value-bind (stream newline? fmt-string/args)
       (parse-fmt-args args)
@@ -110,7 +113,9 @@ DESCRIPTION
   "SYNOPSIS
       (fmts [ :s stream ] [ :nl | :nl+] (fmt-string fmt-args))
 DESCRIPTION
-      Like `fmt' but you can specify several in one form.
+      `fmt-string' is the same as control-string in format,
+      but with ~ (tilde) and : (colon) swapped.
+      `fmts' is like `fmt' but you can specify several in one form.
       Default `stream' is t.
       `:nl' inserts newlines between fmts.
       `:nl+' inserts newlines between fmts and also after the last one"
@@ -119,20 +124,10 @@ DESCRIPTION
     (fmts-aux stream newline? fmt-lists
               :translate? t)))
 
-(defmacro echo (&rest args)
-  "SYNOPSIS
-      (echo [ :-nl ] args)
-DESCRIPTION
-      Prints args with ~A formatting.
-      You can pass :-nl as the first argument to avoid newline."
-  (if (eq (first args) :-nl)
-      `(fmt4l ":A " ,@(rest args))
-      `(fmt4l :nl ":A " ,@args)))
-
 (defmacro format2 (&rest args)
   "SYNOPSIS
       (format+ [ :s stream ] [ :nl ] format-string format-args)
-DESCRIPTION      
+DESCRIPTION
       You can omit stream argument - t is default.
       `:nl' adds newline in the end (same as :% would)."
   (multiple-value-bind (stream newline? fmt-string/args)
@@ -145,7 +140,7 @@ DESCRIPTION
        (format4l [ :s stream ] [ :nl ] format-string format-args)
 DESCRIPTION
        Applies format-string to each arg in format-args.
-       To put it simply, multiplies fmt-string by the number of arguments.
+       To put it simply, multiplies format-string by the number of arguments.
        `:nl' adds newline"
   (multiple-value-bind (stream newline? fmt-string/args)
       (parse-fmt-args args)
@@ -165,5 +160,16 @@ DESCRIPTION
     (fmts-aux stream newline? fmt-lists
               :translate? nil)))
 
-(defmacro tbl (&rest args)
-  )
+(defmacro echo (&rest args)
+  "SYNOPSIS
+      (echo [ :-nl ] args)
+DESCRIPTION
+      Prints args with ~S formatting.
+      You can pass `:-nl' as the first argument to avoid newline."
+  (if (eq (first args) :-nl)
+      `(fmt4l ":S " ,@(rest args))
+      `(fmt4l :nl ":S " ,@args)))
+
+;; TODO
+;; (defmacro tbl (&rest args)
+;;   )

@@ -10,15 +10,14 @@
                 #:hash-table-values
                 #:hash-table-alist)
   (:export
-   ;; fmt
+   ;; fmt.lisp
    #:fmt
    #:fmt4l
    #:fmts
-   #:echo
    #:format2
    #:format4l
    #:formats
+   #:echo
    ;; dbp.lisp
-   #:dbp
-   #:dbp-reset-format
+   #:dbp   
    #:dbp-reset-counter))
