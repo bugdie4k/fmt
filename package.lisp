@@ -8,7 +8,8 @@
                 #:mappend
                 #:curry
                 #:hash-table-values
-                #:hash-table-alist)
+                #:hash-table-alist
+                #:hash-table-plist)
   (:export
    ;; fmt.lisp
    #:fmt

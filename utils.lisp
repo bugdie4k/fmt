@@ -7,6 +7,12 @@
      (declare (ignorable it))
      (if it ,then-form ,else-form)))
 
+(defmacro awhen (test-form &body body)
+  "Anaphoric when: use `it' in body to
+   refer to result of the test-form."   ; LMH
+  `(aif ,test-form
+        (progn ,@body)))
+
 (defmacro aand (&rest args)
   "Anaphoric and: use `it' to refer to result of
   previous form evaluation."
