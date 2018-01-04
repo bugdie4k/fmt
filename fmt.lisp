@@ -44,16 +44,12 @@
              ,@fmt-args))
 
   (defun fmt4l-aux (stream newline? fmt-str-form fmt-args &key (translate? t))
-    (let* ((args-num (length fmt-args))
-           (format-str-form-sym (gensym "FORMAT-STR-FORM"))
-           (stream-sym (gensym "STREAM"))
+    (let* ((format-str-form-sym (gensym "FORMAT-STR-FORM"))
            (format-str-form
             `(let ((,format-str-form-sym ,(if translate?
                                               `(fmt->format ,fmt-str-form)
                                               fmt-str-form)))
-               (with-output-to-string (,stream-sym)
-                 (loop repeat ,args-num
-                    collect (princ ,format-str-form-sym ,stream-sym)))))
+               (format nil "~A~A~A" "~{" ,format-str-form-sym "~}")))
            (format-str-form
             (if newline?
                 `(concatenate 'string ,format-str-form "~%")
@@ -61,7 +57,7 @@
            (format-str-form (if (stringp fmt-str-form)
                                 (eval format-str-form)
                                 format-str-form)))
-      `(format ,stream ,format-str-form ,@fmt-args)))
+      `(format ,stream ,format-str-form (list ,@fmt-args))))
 
   (defun fmts-aux (stream newline? fmt-lists &key (translate? t))
     (let* ((stream-sym (gensym "STREAM"))
