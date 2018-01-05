@@ -15,7 +15,7 @@
    #:fmt
    #:fmt4l
    #:fmts
-   #:format2
+   #:format+
    #:format4l
    #:formats
    #:echo

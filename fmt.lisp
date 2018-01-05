@@ -1,6 +1,7 @@
 (in-package #:fmt)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  
   (defun parse-initial-keywords (args &rest keywords)
     (let ((keywords-ht (make-hash-table)))
       (labels ((%keyword (keyword-el)
@@ -139,7 +140,8 @@
               (butlast fmt-lists))
            ,(%make-format-call (car (last fmt-lists)) delimiter+)
            ,(unless stream
-              `(get-output-stream-string ,stream-sym)))))))
+              `(get-output-stream-string ,stream-sym))))))
+  ) ; eval-when
 
 (defmacro fmt (&rest args)
   "SYNOPSIS
@@ -189,7 +191,7 @@ DESCRIPTION
     (fmts-aux stream delimiter delimiter+ fmt-lists
               :translate? t)))
 
-(defmacro format2 (&rest args)
+(defmacro format+ (&rest args)
   "SYNOPSIS
       (format+ [ :s stream ] [ :nl ] format-string format-args)
 DESCRIPTION

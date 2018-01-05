@@ -27,12 +27,6 @@
   (defmethod token-designator ((tok option-token))
     (format nil "O<~A:~A>" (name tok) (value tok)))
 
-  (defun token? (arg)
-    (typep arg 'token))
-
-  (defun option-token? (arg)
-    (typep arg 'option-token))  
-
   (defun parse-take1 (next-args)
     (values (make-instance 'regular-token
                            :form (first next-args))
@@ -226,7 +220,7 @@
     (loop
        :with cleaned-token-list = nil
        :for token in token-list
-       :do (if (option-token? token)
+       :do (if (typep token 'option-token)
                (setf (gethash (name token) options)
                      (value token))
                (push token cleaned-token-list))
@@ -285,15 +279,16 @@ control-string, format-argument, return-form, return-form-print?"))
     (if (conditional? tok) "~&" "~%"))
 
   (defmethod translate-token ((tok return-token) options)
-    (if (not (print? tok))
-        (values "" nil (form tok))
-        (let ((sym (gensym "RETURNED"))
-              (format-letter
-               (string+ "~" (gethash :format-letter options)))
-              (word-delimiter
-               (gethash :words-delimiter options)))
-          (values (string+ format-letter word-delimiter)
-                  sym (form tok) t))))
+    (let ((sym (gensym "RETURNED"))
+          (format-letter
+           (string+ "~" (gethash :format-letter options)))
+          (word-delimiter
+           (gethash :words-delimiter options)))
+      (if (print? tok)
+          (values (string+ format-letter word-delimiter) sym
+                  (list sym (form tok)))
+          (values "" nil
+                  (list sym (form tok))))))
 
   (defun translate-tokens (token-list options)
     "Translates markup token list to format form"
@@ -302,8 +297,8 @@ control-string, format-argument, return-form, return-form-print?"))
                (if (not token-list)
                    (values (coerce format-control-chars 'string)
                            (reverse format-args)
-                           (reverse returns))
-                   (multiple-value-bind (f-str f-arg return return-printing?)
+                           returns)
+                   (multiple-value-bind (f-str f-arg return)
                        (translate-token (first token-list) options)
                      (let* ((format-control-chars (append format-control-chars
                                                   (coerce f-str 'list)))
@@ -311,9 +306,7 @@ control-string, format-argument, return-form, return-form-print?"))
                                              (cons f-arg format-args)
                                              format-args))
                             (returns (if return
-                                         (if return-printing?
-                                             (cons (cons return f-arg) returns)
-                                             (cons return returns))
+                                         (cons return returns)
                                          returns)))
                        (%translate (rest token-list)
                                    format-control-chars
@@ -321,7 +314,6 @@ control-string, format-argument, return-form, return-form-print?"))
                                    returns))))))
       (multiple-value-bind (format-control-string format-args returns)
           (%translate token-list)
-        ;; TODO
         (values `(format nil ,format-control-string ,@format-args)
                 returns))))
 
@@ -336,7 +328,11 @@ control-string, format-argument, return-form, return-form-print?"))
 (defmacro dbp (&body body)
   (with-slots (prefix message options)
       (parse-body body)
-    (let ((prefix-format (translate-tokens prefix options))
+    (multiple-value-bind (prefix-format prefix-returns)
+        (translate-tokens prefix options)
+      (multiple-value-bind (message-format message-returns)
+          ))
+    (let ((prefix-format )
           (message-format (translate-tokens message options)))
       (echo prefix-format)
       (echo message-format))))
@@ -355,5 +351,3 @@ control-string, format-argument, return-form, return-form-print?"))
       (echo rs)
       (echo :>>>>>>>>>)
       (eval `(format t ,fs ,@fa)))))
-
-
