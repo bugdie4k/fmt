@@ -6,11 +6,14 @@
   (defclass+ regular-token (token) form)
   (defclass+ newline-token (token) conditional?)
   (defclass+ delim-token (token) pattern)
-  (defclass+ return-token (token) form print?)
+  (defclass+ return-token (token) form generated-symbol print?)
   (defclass+ option-token (token) name value)
 
   (defmethod print-object ((tok token) stream)
     (format stream ".~A." (token-designator tok)))
+
+  (defgeneric token-designator (tok)
+    (:documentation "Return string with textual token representation"))
 
   (defmethod token-designator ((tok regular-token))
     (format nil "R<~S>" (form tok)))
@@ -22,43 +25,57 @@
     (format nil "D<~A>" (pattern tok)))
 
   (defmethod token-designator ((tok return-token))
-    (format nil "~A<~A>" (if (print? tok) "PRET" "RET") (form tok)))
+    (format nil "~A<~S = ~A>"
+            (if (print? tok) "PRET" "RET")
+            (generated-symbol tok)
+            (form tok)))
 
   (defmethod token-designator ((tok option-token))
     (format nil "O<~A:~A>" (name tok) (value tok)))
 
-  (defun parse-take1 (next-args)
+  (defun parse-kw/literally (lexem-next-args)
     (values (make-instance 'regular-token
-                           :form (first next-args))
-            (rest next-args)))
+                           :form (first lexem-next-args))
+            (rest lexem-next-args)))
 
-  (defun parse-delimiter (next-args)
+  (defun parse-kw/delimiter (lexem-next-args)
     (values (make-instance 'delim-token
                            :pattern (write-to-string
-                                     (first next-args)))
-            (rest next-args)))
+                                     (first lexem-next-args)))
+            (rest lexem-next-args)))
 
-  (defun parse-newline (conditional? next-args)
+  (defun parse-kw/newline (conditional? lexem-next-args)
     (values (make-instance 'newline-token :conditional? conditional?)
-            next-args))
+            lexem-next-args))
 
-  (defun parse-return (print? next-args)
-    (values (make-instance 'return-token :form (first next-args)
+  (defun parse-kw/return (print? lexem-next-args)
+    (values (make-instance 'return-token
+                           :form (first lexem-next-args)
+                           :generated-symbol (gensym "RETURNED")
                            :print? print?)
-            (rest next-args)))
+            (rest lexem-next-args)))
 
   (defclass+ keywords ()
     (section-designators (make-hash-table))
     (markup (make-hash-table))
-    (options (make-hash-table)))
+    (options (make-hash-table))
+    (returns (make-hash-table)))
 
   (defvar *keywords* (make-instance 'keywords))
 
-  (defmacro ^defkeywords (&rest definitions-by-type)
+  (defun kw^keywords-slots-as-keywords ()
+    (loop
+       :for slot :in (sb-mop::class-slots (find-class 'keywords))
+       :collect (intern (symbol-name (sb-mop::slot-definition-name slot))
+                        :keyword)))
+
+  (defmacro kw^defkeywords (&rest definitions-by-type)
     (flet ((%accessor (slot-kw)
-             (ecase slot-kw
-               ((:section-designators :markup :options)
-                (intern (symbol-name slot-kw)))))
+             (if (find slot-kw (kw^keywords-slots-as-keywords))
+                 (intern (symbol-name slot-kw))
+                 (error "Bad kw^defkeywords form:~%~
+                         The keywords class (~A) has no slot with the name ~A"
+                        (find-class 'keywords) (symbol-name slot-kw))))
            (%add-keyword (accessor name value)
              `(setf
                (gethash ,name (,accessor *keywords*))
@@ -77,54 +94,66 @@
                         entries))))
                  definitions-by-type))))
 
-  (defun parse-word-delimiter (next-args)
-    (values (format nil "~A" (first next-args))
-            (rest next-args)))
+  (defun parse-kw-opt/take1-to-string (lexem-next-args)
+    (values (format nil "~A" (first lexem-next-args))
+            (rest lexem-next-args)))
 
-  (defun make-parse-set-to (value)
-    (lambda (next-args)
-      (values value next-args)))
+  (defun parse-kw-opt/take1 (lexem-next-args)
+    (values (first lexem-next-args)
+            (rest lexem-next-args)))
 
-  (^defkeywords
+  (defun parse-kw-opt/make-set-to (value)
+    (lambda (lexem-next-args)
+      (values value lexem-next-args)))
+
+  (kw^defkeywords
    (:section-designators
     (:prefix  "p>")
     (:message "m>"))
    (:markup
-    (:literally           "l"   #'parse-take1)
-    (:delimiter           "d"   #'parse-delimiter)
-    (:newline             "nl"  (curry #'parse-newline nil))
-    (:conditional-newline "cnl" (curry #'parse-newline t))
-    (:return              "r"   (curry #'parse-return nil))
-    (:print-return        "pr"  (curry #'parse-return t)))
+    (:literally           "l"   #'parse-kw/literally)
+    (:delimiter           "d"   #'parse-kw/delimiter)
+    (:newline             "nl"  (curry #'parse-kw/newline nil))
+    (:conditional-newline "cnl" (curry #'parse-kw/newline t)))
+   (:returns
+    (:return       "r="  (curry #'parse-kw/return nil))
+    (:print-return "pr=" (curry #'parse-kw/return t)))
    (:options
-    (:words-delimiter  "?wd"             " " #'parse-word-delimiter)
-    (:stream           "?s"              t   #'parse-take1)
-    (:delimiter-length "?dl"             60  #'parse-take1)
-    (:format-letter    "?format"         "S" #'parse-take1)
-    (:reset-counter    "?rsc"            nil (make-parse-set-to t))
-    (:no-end-newline   "?no-end-newline" nil (make-parse-set-to t))
-    (:no-counter       "?no-counter"     nil (make-parse-set-to t))
-    (:no-clip          "?no-clip"        nil (make-parse-set-to t))))
+    (:word-delimiter  "?wd"             " " #'parse-kw-opt/take1-to-string)
+    (:format-letter   "?fletter"        "S" #'parse-kw-opt/take1-to-string)
+    (:stream          "?s"              t   #'parse-kw-opt/take1)
+    (:delimiter-width "?dw"             60  #'parse-kw-opt/take1)
+    (:counter-width   "?counter-w"      3   #'parse-kw-opt/take1)
+    (:prefix-width    "?prefix-w"       8   #'parse-kw-opt/take1)
+    (:cut-counter     "?cut-counter"    nil (parse-kw-opt/make-set-to t))
+    (:cut-prefix      "?cut-prefix"     nil (parse-kw-opt/make-set-to t))
+    (:reset-counter   "?rsc"            nil (parse-kw-opt/make-set-to t))
+    (:no-end-newline  "?no-end-newline" nil (parse-kw-opt/make-set-to t))
+    (:no-counter      "?no-counter"     nil (parse-kw-opt/make-set-to t))
+    (:no-clip         "?no-clip"        nil (parse-kw-opt/make-set-to t))))
 
-  (defun ^default-options-ht ()
-    (let ((ht (make-hash-table)))
-      (maphash
-       (lambda (name settings)
-         (let ((default (second settings)))
-           (setf (gethash name ht) default)))
-       (options *keywords*))
-      ht))
+  (defun kw^default-options-ht ()
+    (loop
+       :for kw-name :being :the
+       :hash-keys :in (options *keywords*)
+       :using (hash-value kw-option-settings)
+       :with default-ht = (make-hash-table)
+       :do (setf (gethash kw-name default-ht) (second kw-option-settings))
+       :finally (return default-ht)))
 
-  (defun ^section-designators-alist ()
+  (defun kw^section-designators-alist ()
     (hash-table-alist (section-designators *keywords*)))
 
-  (defun ^markup-alist ()
+  (defun kw^markup-alist ()
     (hash-table-alist (markup *keywords*)))
 
-  (defun ^options-alist ()
+  (defun kw^returns-alist ()
+    (hash-table-alist (returns *keywords*)))
+
+  (defun kw^options-alist ()
     (hash-table-alist (options *keywords*)))
 
-  (defun ^section-designators-names ()
+  (defun kw^section-designators-names ()
     (hash-table-values
      (section-designators *keywords*)))
 
@@ -134,64 +163,92 @@
   (defun section-designator? (arg)
     (let ((arg-name (symbol-name? arg)))
       (find-if (curry #'string-equal arg-name)
-               (^section-designators-names))))
+               (kw^section-designators-names))))
 
-  (defun parse-markup-lexem (lexem next-args)
+  (defun parse-2valued-keyword (alist lexem lexem-next-args)
     (loop
        :for (name . (value parse-fn))
-       :in (^markup-alist)
+       :in alist
        :when (string-equal value lexem)
-       :do (return (funcall parse-fn next-args))))
+       :do (return (funcall parse-fn lexem-next-args))))
 
-  (defun parse-option-lexem (lexem next-args)
+  (defun parse-return-lexem (lexem lexem-next-args)
+    (parse-2valued-keyword (kw^returns-alist) lexem lexem-next-args))
+
+  (defun parse-markup-lexem (lexem lexem-next-args)
+    (parse-2valued-keyword (kw^markup-alist) lexem lexem-next-args))
+
+  (defun parse-option-lexem (lexem lexem-next-args)
     (loop
        :for (name . (value default parse-fn))
-       :in (^options-alist)
+       :in (kw^options-alist)
        :when (string-equal value lexem)
        :do (multiple-value-bind (value-to-use rest-args)
-               (funcall parse-fn next-args)
+               (funcall parse-fn lexem-next-args)
              (return
                (values (make-instance 'option-token
                                       :name name
                                       :value value-to-use)
                        rest-args)))))
 
-  (defun parse-lexem (lexem args)
-    (let* ((next-args (rest args)))
-      (if (and (string-equal (subseq lexem 0 1) "d")
-               (not (string-equal (subseq lexem 1) "")))
-          ;; NOTE: special syntax for d
-          (values (make-instance 'delim-token
-                                 :pattern (subseq lexem 1))
-                  next-args)
-          (multiple-value-bind (markup-token rest-args)
-              (parse-markup-lexem lexem next-args)
-            (if markup-token
-                (values markup-token rest-args)
-                (multiple-value-bind (option rest-args)
-                    (parse-option-lexem lexem next-args)
-                  (if option
-                      (values option rest-args)
-                      (values (make-instance 'regular-token
-                                             :form (first args))
-                              next-args))))))))
+  (defun parse-lexem (lexem lexem-next-args)
+    ;; NOTE: special syntax for d here
+    (if (and (string-equal (subseq lexem 0 1) "d")
+             (not (string-equal (subseq lexem 1) "")))
+        (values (make-instance 'delim-token
+                               :pattern (subseq lexem 1))
+                lexem-next-args)
+        (multiple-value-bind (markup-token rest-args)
+            (parse-markup-lexem lexem lexem-next-args)
+          (if markup-token
+              (values markup-token rest-args)
+              (multiple-value-bind (option rest-args)
+                  (parse-option-lexem lexem lexem-next-args)
+                (if option
+                    (values option rest-args)
+                    (multiple-value-bind (return-token rest-args)
+                        (parse-return-lexem lexem lexem-next-args)
+                      (when return-token
+                        (values
+                         (when (print? return-token)
+                           (make-instance
+                            'regular-token
+                            :form (generated-symbol return-token)))
+                         rest-args
+                         return-token)))))))))
 
-  (defun parse-markup (args &optional tokens)
+  (defun parse-symbol (sym-name args)
+    (let ((lexem-next-args (rest args)))
+      (multiple-value-bind (token rest-args return-token)
+          (parse-lexem sym-name lexem-next-args)
+        (cond (token
+               (values token rest-args return-token))
+              (return-token
+               (values nil rest-args return-token))
+              (t
+               (values (make-instance 'regular-token
+                                      :form (first args))
+                       lexem-next-args))))))
+
+  (defun parse-markup (args &optional tokens return-tokens)
     (if (not args)
-        (values (reverse tokens) nil)
+        (values (reverse tokens) nil return-tokens)
         (aif (symbol-name? (first args))
              (if (section-designator? (first args))
-                 (values (reverse tokens) args)
-                 (multiple-value-bind (token rest-args)
-                     (parse-lexem it args)
-                   (parse-markup rest-args (cons token tokens))))
+                 (values (reverse tokens) args return-tokens)
+                 (multiple-value-bind (token rest-args return-token)
+                     (parse-symbol it args)
+                   (parse-markup rest-args
+                                 (cons-if-truthy token tokens)
+                                 (cons-if-truthy return-token return-tokens))))
              (parse-markup (rest args)
                            (cons (make-instance 'regular-token
                                                 :form (first args))
-                                 tokens)))))
+                                 tokens)
+                           return-tokens))))
 
   (defun section-slot-name (lexem)
-    (dolist (entry (^section-designators-alist))
+    (dolist (entry (kw^section-designators-alist))
       (destructuring-bind (name . value) entry
         (when (string-equal value lexem)
           (return (intern (symbol-name name) :fmt))))))
@@ -199,21 +256,26 @@
   (defclass+ parsed ()
     prefix
     message
-    (options (^default-options-ht)))
+    returns
+    (options (kw^default-options-ht)))
 
   (defun parse-sections (args &optional (parsed (make-instance 'parsed)))
     (if (not args)
-        (values parsed nil)
+        parsed
         (multiple-value-bind (slot-name-sym args-to-parse)
             (aif (aand (symbol-name? (first args))
                        (section-slot-name it))
                  (values it (rest args))
                  ;; NOTE: if no section is specified as the first arg
-                 ;;       -> it's message ('m>') section
+                 ;;       => it's message ('m>') section
                  (values 'message args))
-          (multiple-value-bind (token-list rest-args)
+          (multiple-value-bind (token-list rest-args return-tokens)
               (parse-markup args-to-parse)
-            (setf (slot-value parsed slot-name-sym) token-list)
+            (setf (slot-value parsed slot-name-sym)
+                  (append (slot-value parsed slot-name-sym) token-list))
+            (when return-tokens
+              (setf (returns parsed)
+                    (append return-tokens (returns parsed))))
             (parse-sections rest-args parsed)))))
 
   (defun pick-options (token-list options)
@@ -227,7 +289,7 @@
        :finally (return (values options (reverse cleaned-token-list)))))
 
   (defun parse-body (body)
-    (with-slots (prefix message options)
+    (with-slots (prefix message returns options)
         (parse-sections body)
       (multiple-value-bind (redefined-options cleaned-prefix)
           (pick-options prefix options)
@@ -236,34 +298,40 @@
           (make-instance 'parsed
                          :prefix  cleaned-prefix
                          :message cleaned-message
+                         :returns returns
                          :options redefined-options)))))
 
-  (defgeneric translate-token (tok options)
+  (defgeneric translate-token (token options &key word-delimiter?)
     (:documentation
-     "Translate token returning up to four values:
-control-string, format-argument, return-form, return-form-print?"))
+     "Translate token returning two values:
+format-control-string, format-argument"))
 
-  (defmethod translate-token ((tok regular-token) options)
+  (defmethod translate-token ((token regular-token) options
+                              &key word-delimiter?)
     (let ((format-letter
            (string+ "~" (gethash :format-letter options)))
           (word-delimiter
-           (gethash :words-delimiter options)))
-      (labels ((%stringable? (form)
-                 (or (numberp form)
-                     (characterp form)
-                     (keywordp form)))
-               (%translate-el/string (str)
-                 (string+ str word-delimiter)))
-        (with-slots (form) tok
-          (cond ((stringp form) (%translate-el/string form))
+           (gethash :word-delimiter options)))
+      (flet ((%+word-delimiter (str)
+               (if word-delimiter?
+                   (string+ str word-delimiter)
+                   str))
+             (%stringable? (form)
+               (or (numberp form)
+                   (characterp form)
+                   (keywordp form))))
+        (with-slots (form) token
+          (cond ((stringp form) (%+word-delimiter form))
                 ((%stringable? form)
-                 (%translate-el/string (write-to-string form)))
-                (t (values (string+ format-letter word-delimiter)
+                 (%+word-delimiter (write-to-string form)))
+                (t (values (%+word-delimiter format-letter)
                            form)))))))
 
-  (defmethod translate-token ((tok delim-token) options)
-    (let* ((delim-len (gethash :delimiter-length options))
-           (pattern (pattern tok))
+  (defmethod translate-token ((token delim-token) options
+                              &key word-delimiter?)
+    (declare (ignore word-delimiter?))
+    (let* ((delim-len (gethash :delimiter-width options))
+           (pattern (pattern token))
            (pattern-len (length pattern)))
       (flet ((%make-delim ()
                (with-output-to-string (s)
@@ -273,81 +341,125 @@ control-string, format-argument, return-form, return-form-print?"))
                     :do
                       (format s "~A" pattern)
                       (setf cur-len (+ cur-len pattern-len))))))
-        (string+ "~&" (subseq (%make-delim) 0 delim-len) "~&"))))
+        (string+ "~&" (subseq (%make-delim) 0 delim-len) "~%"))))
 
-  (defmethod translate-token ((tok newline-token) options)
-    (if (conditional? tok) "~&" "~%"))
-
-  (defmethod translate-token ((tok return-token) options)
-    (let ((sym (gensym "RETURNED"))
-          (format-letter
-           (string+ "~" (gethash :format-letter options)))
-          (word-delimiter
-           (gethash :words-delimiter options)))
-      (if (print? tok)
-          (values (string+ format-letter word-delimiter) sym
-                  (list sym (form tok)))
-          (values "" nil
-                  (list sym (form tok))))))
+  (defmethod translate-token ((token newline-token) options
+                              &key word-delimiter?)
+    (declare (ignore word-delimiter?))
+    (if (conditional? token) "~&" "~%"))
 
   (defun translate-tokens (token-list options)
     "Translates markup token list to format form"
-    (labels ((%translate (token-list
-                          &optional format-control-chars format-args returns)
+    (labels ((%word-delimiter? (rest-token-list)
+               (and rest-token-list
+                    (not (typep (first rest-token-list) 'delim-token))
+                    (not (typep (first rest-token-list) 'newline-token))))
+             (%translate (token-list
+                          &optional format-control-chars format-args)
                (if (not token-list)
                    (values (coerce format-control-chars 'string)
-                           (reverse format-args)
-                           returns)
-                   (multiple-value-bind (f-str f-arg return)
-                       (translate-token (first token-list) options)
-                     (let* ((format-control-chars (append format-control-chars
-                                                  (coerce f-str 'list)))
-                            (format-args (if f-arg
-                                             (cons f-arg format-args)
-                                             format-args))
-                            (returns (if return
-                                         (cons return returns)
-                                         returns)))
-                       (%translate (rest token-list)
-                                   format-control-chars
-                                   format-args
-                                   returns))))))
-      (multiple-value-bind (format-control-string format-args returns)
-          (%translate token-list)
-        (values `(format nil ,format-control-string ,@format-args)
-                returns))))
+                           (reverse format-args))
+                   (multiple-value-bind (f-str f-arg)
+                       (translate-token
+                        (first token-list) options
+                        :word-delimiter? (%word-delimiter? (rest token-list)))
+                     (%translate (rest token-list)
+                                 (append format-control-chars
+                                         (coerce f-str 'list))
+                                 (cons-if-truthy f-arg format-args))))))
+      (when token-list
+        (multiple-value-bind (format-control-string format-args)
+            (%translate token-list)
+          `(format nil ,format-control-string ,@format-args)))))
 
   ) ; eval-when
 
-;; TODO (defvar *dbp-options* nil)
-(defvar *dbp-counter* 0)
+(defvar *counter* 0)
+
+(declaim (inline c^get c^reset c^inc dbp-reset-counter))
+
+(defun c^get () *counter*)
+
+(defun c^reset ()
+  (setf *counter* 0))
+
+(defun c^inc ()
+  (incf *counter*))
 
 (defun dbp-reset-counter ()
-  (setf *dbp-counter* 0))
+  (c^reset))
+
+(defun prepare-clips (no-clip)
+  (mappend #'list '(:oneline :upper :middle :lower)
+           (if (not no-clip)
+               '("• " "┌ " "│ ""└ ")
+               '("" "" "" ""))))
+
+(defun prepare-prefix (prefix width cut?)
+  (if prefix
+      (concatenate 'string
+                   (fit-into prefix width :cut? cut?)
+                   " ")
+      ""))
+
+(defun prepare-counter (no-counter width cut?)
+  (if (not no-counter)
+      (concatenate 'string
+                   (fit-into (write-to-string (c^get)) width :cut? cut?)
+                   " ")
+      ""))
+
+(defun dbp-print-message (&key prefix message options)
+  (when (gethash :reset-counter options) (c^reset))
+  (let* ((prefix (prepare-prefix prefix
+                                 (gethash :prefix-width options)
+                                 (gethash :cut-prefix options)))
+         (message (or message ""))
+         (clips (prepare-clips (gethash :no-clip options)))
+         (stream (gethash :stream options))
+         (counter (prepare-counter (gethash :no-counter options)
+                                   (gethash :counter-width options)
+                                   (gethash :cut-counter options)))
+         (newlines (loop :for ch :across message :count
+                        (char-equal ch #\newline))))
+    (if (= newlines 0)
+        (format stream "~A~A~A~A"
+                (getf clips :oneline) counter prefix message)
+        (progn
+          (format stream "~A~A~A"
+                  (getf clips :upper) counter prefix)
+          (loop
+             :for ch :across message
+             :with i = 0
+             :do
+               (format stream "~C" ch)
+               (when (char-equal ch #\newline)
+                 (incf i)
+                 (format stream "~A~A~A"
+                         (if (= i newlines)
+                             (getf clips :lower)
+                             (getf clips :middle))
+                         counter prefix)))))
+    (when (not (gethash :no-end-newline options))
+      (format stream "~%"))
+    (c^inc)))
 
 (defmacro dbp (&body body)
-  (with-slots (prefix message options)
+  "dbp is short for debug print.
+It is a macro with a small markup syntax for a better experience
+of debugging with debug prints."
+  (with-slots (prefix message options returns)
       (parse-body body)
-    (multiple-value-bind (prefix-format prefix-returns)
+    (multiple-value-bind (prefix-format)
         (translate-tokens prefix options)
-      (multiple-value-bind (message-format message-returns)
-          ))
-    (let ((prefix-format )
-          (message-format (translate-tokens message options)))
-      (echo prefix-format)
-      (echo message-format))))
-
-(defun test ()
-  (with-slots (prefix message options)
-      (parse-body
-       '(1 2 3 d-- (+ 1 2) (* 4 2) nl :a cnl :b nl nl :c nl cnl cnl :l :d r 1 pr 2))
-    (echo prefix)
-    (echo message)
-    (echo (alexandria::hash-table-plist options))
-    (multiple-value-bind (fs fa rs)
-        (translate-tokens message options)
-      (echo fs)
-      (echo fa)
-      (echo rs)
-      (echo :>>>>>>>>>)
-      (eval `(format t ,fs ,@fa)))))
+      (multiple-value-bind (message-format)
+          (translate-tokens message options)
+        `(let ,(mapcar
+                (lambda (return-token)
+                  (list (generated-symbol return-token)
+                        (form return-token)))
+                returns)
+           (dbp-print-message :prefix ,prefix-format
+                              :message ,message-format
+                              :options ,options)
+           (values ,@(mapcar #'generated-symbol returns)))))))

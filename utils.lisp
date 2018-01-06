@@ -71,4 +71,25 @@ Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
                (format s "~A: ~S~%" name val))))))
 
 (defun string+ (&rest strings)
-  (format nil "~{~A~}" strings))
+  (with-output-to-string (s)
+    (dolist (str strings)
+      (loop
+         :for ch :across str
+         :do (format s "~C" ch)))))
+
+(defun cons-if-truthy (obj list)
+  (if obj (cons obj list) list))
+
+(defun fit-into (string width &key (with-char #\space) (cut? t) (widen? t))
+  (let ((len (length string)))
+    (cond ((> len width)
+           (if cut?
+               (subseq string 0 width)
+               string))
+          ((< len width)
+           (if widen?
+               (concatenate 'string string
+                            (make-string (- width len)
+                                         :initial-element with-char))
+               string))
+          (t string))))

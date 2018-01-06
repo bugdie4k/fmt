@@ -3,13 +3,9 @@
   (:use #:cl)
   (:import-from #:alexandria
                 #:mappend
-                #:switch
-                #:symbolicate
-                #:mappend
                 #:curry
                 #:hash-table-values
-                #:hash-table-alist
-                #:hash-table-plist)
+                #:hash-table-alist)
   (:export
    ;; fmt.lisp
    #:fmt
@@ -19,6 +15,9 @@
    #:format4l
    #:formats
    #:echo
+   #:brk
+   #:brk4l
+   #:breacho
    ;; dbp.lisp
    #:dbp   
    #:dbp-reset-counter))
