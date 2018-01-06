@@ -5,6 +5,8 @@
   :serial t
   :depends-on ("alexandria")
   :components ((:file "package")
-               (:file "utils")
-               (:file "fmt")               
-               (:file "dbp")))
+               (:module "src"
+                :serial t
+                :components ((:file "utils")
+                             (:file "fmt")               
+                             (:file "dbp")))))
