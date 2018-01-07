@@ -26,7 +26,8 @@
                (%try-parse-kw ()
                  (awhen (%find)
                    (setf (gethash (%keyword it) keywords-ht)
-                         (%take-next-args (%num-to-take it))))))
+                         (%take-next-args (%num-to-take it)))
+                   t)))
         (dotimes (i (length keywords))
           (unless (%try-parse-kw)
             (return)))
@@ -39,16 +40,38 @@
                 (if found? val (%default-value kw))))
          (list args)))))
 
+  (defun translate-pair (ch1 ch2 fmt-chars)
+    (cond ((char= ch1 #\~)
+           (values (rest fmt-chars) (list #\~ #\~)))
+          ((and (char= ch1 #\:)
+                (or (not ch2)
+                    (not (char= ch2 #\:))))
+           (values (rest fmt-chars) (list #\~)))
+          ((and (char= ch1 #\:)
+                (char= ch2 #\:))
+           (values (rest (rest fmt-chars)) (list #\:)))
+          (t (values (rest fmt-chars) (list ch1)))))
+
+  (defun translate-fmt-to-format (fmt-chars &optional translated-chars)
+    (if (not fmt-chars)
+        translated-chars
+        (multiple-value-bind (rest-fmt-chars next-char-list)
+            (translate-pair (first fmt-chars)
+                            (second fmt-chars)
+                            fmt-chars)
+          (translate-fmt-to-format
+           rest-fmt-chars
+           (append translated-chars
+                   next-char-list)))))
+
   (defun fmt->format (fmt-string)
     (let ((fmt-string (if (stringp fmt-string)
                           fmt-string
                           (write-to-string fmt-string))))
-      (concatenate 'string
-                   (loop
-                      :for ch :across fmt-string
-                      :collect (cond ((char-equal ch #\~) #\:)
-                                     ((char-equal ch #\:) #\~)
-                                     (t ch))))))  
+      (concatenate
+       'string
+       (translate-fmt-to-format
+        (coerce fmt-string 'list)))))
 
   (defun transform-fmt-str-form (fmt-str-form
                                  &key delimiter newline? translate?)
@@ -71,7 +94,8 @@
                   `(concatenate 'string ,format-str-form+d "~%")
                   format-str-form+d)))
         (if (and (stringp format-str-form)
-                 (stringp actual-delimiter))
+                 (or (not actual-delimiter)
+                     (stringp actual-delimiter)))
             (eval format-str-form+d)
             format-str-form+d))))
 
@@ -131,20 +155,40 @@
     (let* ((delimiter (or delimiter+ delimiter))
            (stream-sym (gensym "STREAM"))
            (stream-src (or stream '(make-string-output-stream))))
-      (flet ((%make-format-call (fmt-list delimiter)
-               `(format ,stream-sym
-                        ,@(cons (transform-fmt-str-form (first fmt-list)
-                                                        :delimiter delimiter
-                                                        :translate? translate?)
-                                (rest fmt-list)))))
+      (labels ((%make-ordinary-format-call (fmt-list)
+                 `(format ,stream-sym
+                          ,@(cons (transform-fmt-str-form
+                                   (first fmt-list)
+                                   :translate? translate?)
+                                  (rest fmt-list))))
+               (%make-delim-format-call ()
+                 (when delimiter
+                   `(format ,stream-sym
+                            ,(transform-fmt-str-form delimiter
+                                                     :translate? translate?))))
+               (%make-format-call (fmt-list)
+                 (aif (symbol-name? (first fmt-list))
+                      (cond ((string-equal it "l")
+                             `(fmt4l :s ,stream-sym ,@(rest fmt-list)))
+                            ((string-equal it "s")
+                             `(fmts :s ,stream-sym ,@(rest fmt-list)))
+                            (t (%make-ordinary-format-call fmt-list)))
+                      (%make-ordinary-format-call fmt-list))))
         `(let ((,stream-sym ,stream-src))
-           ,@(mapcar
+           ,@(mappend
               (lambda (fmt-list)
-                 (%make-format-call fmt-list delimiter))
+                (let* ((delim (%make-delim-format-call))
+                       (delim (when delim (list delim))))
+                  (append
+                   (list (%make-format-call fmt-list))
+                   delim)))
               (butlast fmt-lists))
-           ,(%make-format-call (car (last fmt-lists)) delimiter+)
-           ,(unless stream
-              `(get-output-stream-string ,stream-sym))))))
+           ,(%make-format-call (first (last fmt-lists)))
+           ,@(when delimiter+
+               (list (%make-delim-format-call)))
+           ,@(unless stream
+               (list `(get-output-stream-string ,stream-sym)))))))
+
   ) ; eval-when
 
 (defmacro fmt (&rest args)

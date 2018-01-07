@@ -93,3 +93,6 @@ Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
                                          :initial-element with-char))
                string))
           (t string))))
+
+(defun symbol-name? (arg)
+    (and (symbolp arg) (symbol-name arg)))

@@ -1,12 +1,13 @@
 (asdf:defsystem :fmt
   :description "Debug printing improved"
-  :version "0.0.0"
   :author "Danylo Fedorov <fedorough@gmail.com>"
-  :serial t
-  :depends-on ("alexandria")
-  :components ((:file "package")
-               (:module "src"
+  :homepage "https://github.com/bugdie4k/fmt"
+  :version "0.0.1"
+  :depends-on (:alexandria)
+  :in-order-to ((asdf:test-op (asdf:test-op :fmt-test)))
+  :components ((:module "src"
                 :serial t
-                :components ((:file "utils")
-                             (:file "fmt")               
+                :components ((:file "package")
+                             (:file "utils")
+                             (:file "fmt")
                              (:file "dbp")))))

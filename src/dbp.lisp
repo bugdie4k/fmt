@@ -61,6 +61,7 @@
     (options (make-hash-table))
     (returns (make-hash-table)))
 
+  ;; functions that access *keywords* are prefixed with kw^
   (defvar *keywords* (make-instance 'keywords))
 
   (defun kw^keywords-slots-as-keywords ()
@@ -125,6 +126,7 @@
     (:delimiter-width "?dw"             60  #'parse-kw-opt/take1)
     (:counter-width   "?counter-w"      3   #'parse-kw-opt/take1)
     (:prefix-width    "?prefix-w"       8   #'parse-kw-opt/take1)
+    (:break           "?break"          nil (parse-kw-opt/make-set-to t))
     (:cut-counter     "?cut-counter"    nil (parse-kw-opt/make-set-to t))
     (:cut-prefix      "?cut-prefix"     nil (parse-kw-opt/make-set-to t))
     (:reset-counter   "?rsc"            nil (parse-kw-opt/make-set-to t))
@@ -155,10 +157,7 @@
 
   (defun kw^section-designators-names ()
     (hash-table-values
-     (section-designators *keywords*)))
-
-  (defun symbol-name? (arg)
-    (and (symbolp arg) (symbol-name arg)))
+     (section-designators *keywords*)))  
 
   (defun section-designator? (arg)
     (let ((arg-name (symbol-name? arg)))
@@ -327,12 +326,20 @@ format-control-string, format-argument"))
                 (t (values (%+word-delimiter format-letter)
                            form)))))))
 
+  (defun double~tildes (pattern)
+    (with-output-to-string (s)
+      (loop
+         :for ch :across pattern
+         :do
+           (format s "~C" ch)
+           (when (char= ch #\~)
+             (format s "~C" #\~)))))
+
   (defmethod translate-token ((token delim-token) options
                               &key word-delimiter?)
-    (declare (ignore word-delimiter?))
     (let* ((delim-len (gethash :delimiter-width options))
            (pattern (pattern token))
-           (pattern-len (length pattern)))
+           (pattern-len (length pattern)))      
       (flet ((%make-delim ()
                (with-output-to-string (s)
                  (loop
@@ -341,7 +348,8 @@ format-control-string, format-argument"))
                     :do
                       (format s "~A" pattern)
                       (setf cur-len (+ cur-len pattern-len))))))
-        (string+ "~&" (subseq (%make-delim) 0 delim-len) "~%"))))
+        (string+ "~&" (double~tildes (subseq (%make-delim) 0 delim-len))
+                 (if word-delimiter? "~%" "")))))
 
   (defmethod translate-token ((token newline-token) options
                               &key word-delimiter?)
@@ -374,6 +382,7 @@ format-control-string, format-argument"))
 
   ) ; eval-when
 
+;; functions that access *counter* are prefixed with c^
 (defvar *counter* 0)
 
 (declaim (inline c^get c^reset c^inc dbp-reset-counter))
@@ -409,6 +418,9 @@ format-control-string, format-argument"))
                    " ")
       ""))
 
+(defun prepare-stream (stream break)
+  (if break (make-string-output-stream) stream))
+
 (defun dbp-print-message (&key prefix message options)
   (when (gethash :reset-counter options) (c^reset))
   (let* ((prefix (prepare-prefix prefix
@@ -416,7 +428,8 @@ format-control-string, format-argument"))
                                  (gethash :cut-prefix options)))
          (message (or message ""))
          (clips (prepare-clips (gethash :no-clip options)))
-         (stream (gethash :stream options))
+         (break? (gethash :break options))
+         (stream (prepare-stream (gethash :stream options) break?))
          (counter (prepare-counter (gethash :no-counter options)
                                    (gethash :counter-width options)
                                    (gethash :cut-counter options)))
@@ -442,6 +455,8 @@ format-control-string, format-argument"))
                          counter prefix)))))
     (when (not (gethash :no-end-newline options))
       (format stream "~%"))
+    (when break?
+      (break "~A" (get-output-stream-string stream)))
     (c^inc)))
 
 (defmacro dbp (&body body)

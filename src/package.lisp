@@ -1,3 +1,5 @@
+(in-package :cl-user)
+
 (defpackage #:fmt
   (:nicknames #:f)
   (:use #:cl)
