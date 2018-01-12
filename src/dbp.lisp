@@ -86,7 +86,7 @@ of debugging with debug prints."
             ((prefix-format)
              (translate-tokens prefix options))
             ((message-format)
-             (translate-tokens message options))            
+             (translate-tokens message options))
             (dbp-print-message-form
              `(dbp-print-message :prefix ,prefix-format
                                  :message ,message-format

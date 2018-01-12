@@ -5,8 +5,8 @@
   (:use #:cl)
   (:import-from #:alexandria
                 #:mappend
-                #:curry                
-                #:hash-table-alist)  
+                #:curry
+                #:hash-table-alist)
   (:export
    ;; fmt.lisp
    #:fmt
@@ -20,5 +20,5 @@
    #:brk4l
    #:breacho
    ;; dbp.lisp
-   #:dbp   
+   #:dbp
    #:dbp-reset-counter))

@@ -193,7 +193,7 @@
   (assert-true (string= *fmts-expected-3* (fmts.6))))
 
 (defparameter *dbp-expected-1*
-  (format nil 
+  (format nil
           "┌ 0   1 3      2~%~
            └ 0   1 3      5~%"))
 
@@ -206,7 +206,7 @@
   (dbp ?rsc :?s nil :p> 1 :m> 2 :p> 3 :m> nl 5))
 
 (defun dbp.stream.3 ()
-  (with-output-to-string (s)    
+  (with-output-to-string (s)
     (dbp ?rsc :?s s :p> 1 :m> 2 :p> 3 :m> nl 5)))
 
 (defparameter *dbp-expected-2*
@@ -214,7 +214,7 @@
                │ 0   3 12     ~%~
                └ 0   3 12     heh~%"))
 
-(defun dbp.markup.1 ()  
+(defun dbp.markup.1 ()
   (dbp ?rsc :?s nil :p> (+ 1 2) (* 3 4) :m> :lol cnl nl cnl cnl "heh"))
 
 (defparameter *dbp-expected-3*
@@ -305,7 +305,7 @@
   (assert-true (string= *dbp-expected-4* (dbp.markup.3))))
 
 (define-test dbp-eval-sequence
-  (:tag :dbp :dbp-eval-sequence)  
+  (:tag :dbp :dbp-eval-sequence)
   (assert-true (validate.eval-sequence.1 (dbp.eval-sequence.0)))
   (assert-true (string= *dbp-expected-5* (dbp.eval-sequence.1)))
   (assert-true (string= *dbp-expected-6* (dbp.eval-sequence.2))))

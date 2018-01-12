@@ -41,14 +41,14 @@ and type as third."
                                  (type? (third slot-def)))
                             (if type? (append res-slot-def `(:type ,type?))
                                 res-slot-def))))
-                    direct-slots)))))  
+                    direct-slots)))))
 
   (defun string+ (&rest strings)
     (with-output-to-string (s)
       (dolist (str strings)
         (loop
            :for ch :across str
-           :do (format s "~C" ch)))))  
+           :do (format s "~C" ch)))))
 
   (defun fit-into (string width &key (with-char #\space) (cut? t) (widen? t))
     (let ((len (length string)))
@@ -86,7 +86,7 @@ and type as third."
   (defmacro mv-let* (mv-let-list &body body)
     "(mv-let* ((v form)
                ((v v) form))
-      body)"  
+      body)"
     (labels ((%vars (vars) (if (listp vars) vars (list vars)))
              (%expand-mv-let* (mv-let-list)
                (let ((mv-let1 (pop mv-let-list)))
@@ -97,6 +97,6 @@ and type as third."
                      `(multiple-value-bind ,(%vars (first mv-let1))
                           ,(second mv-let1)
                         ,@body)))))
-      (%expand-mv-let* mv-let-list)))  
-  
+      (%expand-mv-let* mv-let-list)))
+
   ) ; eval-when
