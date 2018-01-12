@@ -5,10 +5,8 @@
   (:use #:cl)
   (:import-from #:alexandria
                 #:mappend
-                #:curry
-                #:hash-table-values
-                #:hash-table-alist
-                #:alist-hash-table)  
+                #:curry                
+                #:hash-table-alist)  
   (:export
    ;; fmt.lisp
    #:fmt

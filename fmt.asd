@@ -11,5 +11,7 @@
                              (:file "fmt")
                              (:file "dbp-tokens")
                              (:file "dbp-keywords")
+                             (:file "dbp-parser")
+                             (:file "dbp-translate-tokens")
                              (:file "dbp"))))
   :in-order-to ((asdf:test-op (asdf:test-op :fmt-test))))

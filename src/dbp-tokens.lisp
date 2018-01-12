@@ -4,14 +4,14 @@
 
   (defclass+ token ())
   (defclass+ section-token (token))
-  
+
   (defclass+ prefix-section (section-token))
   (defclass+ message-section (section-token))
-  
+
   (defclass+ regular-token (token) form generated-symbol)
   (defclass+ newline-token (token) conditional?)
   (defclass+ delim-token (token) pattern)
-  
+
   (defclass+ return-token (token) form generated-symbol print?)
   (defclass+ option-token (token) name value)
 
@@ -22,7 +22,7 @@
             (handler-case (token-designator tok)
               (simple-error (e)
                 (declare (ignore e))
-                (class-name (class-of tok))))))  
+                (class-name (class-of tok))))))
 
   (defgeneric token-designator (tok)
     (:documentation "Return string with textual token representation"))

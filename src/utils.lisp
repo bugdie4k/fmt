@@ -41,46 +41,14 @@ and type as third."
                                  (type? (third slot-def)))
                             (if type? (append res-slot-def `(:type ,type?))
                                 res-slot-def))))
-                    direct-slots)))))
-
-  (defgeneric traverse-slots (obj fn)
-    (:documentation
-     "Use fn function on each slot.
-'fn' must take two parameters: slot-name and slot-value."))
-
-  (defmethod traverse-slots (obj fn)
-    (labels ((%traverse-slots (slots-lst)
-               (when slots-lst
-                 (let* ((slot (car slots-lst))
-                        (def-name (sb-mop:slot-definition-name slot))
-                        (name (symbol-name def-name))
-                        (value (slot-value obj def-name)))
-                   (funcall fn name value)
-                   (%traverse-slots (cdr slots-lst))))))
-      (%traverse-slots (sb-mop:class-slots (class-of obj)))))
-
-  (defgeneric pprint-object (obj &optional stream)
-    (:documentation
-     "Pretty printer for objects.
-Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
-
-  (defmethod pprint-object (obj &optional (stream t))
-    (format stream
-            (with-output-to-string (s)
-              (traverse-slots
-               obj
-               (lambda (name val)
-                 (format s "~A: ~S~%" name val))))))
+                    direct-slots)))))  
 
   (defun string+ (&rest strings)
     (with-output-to-string (s)
       (dolist (str strings)
         (loop
            :for ch :across str
-           :do (format s "~C" ch)))))
-
-  (defun cons-if-truthy (obj list)
-    (if obj (cons obj list) list))
+           :do (format s "~C" ch)))))  
 
   (defun fit-into (string width &key (with-char #\space) (cut? t) (widen? t))
     (let ((len (length string)))
@@ -129,6 +97,6 @@ Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
                      `(multiple-value-bind ,(%vars (first mv-let1))
                           ,(second mv-let1)
                         ,@body)))))
-      (%expand-mv-let* mv-let-list)))
+      (%expand-mv-let* mv-let-list)))  
   
   ) ; eval-when

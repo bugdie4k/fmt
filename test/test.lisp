@@ -197,18 +197,120 @@
           "┌ 0   1 3      2~%~
            └ 0   1 3      5~%"))
 
-(defun dbp.1 ()
+(defun dbp.stream.1 ()
   (let ((*standard-output* (make-string-output-stream)))
-    (dbp :p> 1 :m> 2 :p> 3 :m> nl 5 ?rsc)
+    (dbp ?rsc :p> 1 :m> 2 :p> 3 :m> nl 5)
     (get-output-stream-string *standard-output*)))
 
-(defun dbp.2 ()
-  (dbp :?s nil :p> 1 :m> 2 :p> 3 :m> nl 5 ?rsc))
+(defun dbp.stream.2 ()
+  (dbp ?rsc :?s nil :p> 1 :m> 2 :p> 3 :m> nl 5))
 
-(define-test dbp
-  (:tag :dbp)
-  (assert-true (string= *dbp-expected-1* (dbp.1)))
-  (assert-true (string= *dbp-expected-1* (dbp.2))))
+(defun dbp.stream.3 ()
+  (with-output-to-string (s)    
+    (dbp ?rsc :?s s :p> 1 :m> 2 :p> 3 :m> nl 5)))
+
+(defparameter *dbp-expected-2*
+  (format nil "┌ 0   3 12     :LOL~%~
+               │ 0   3 12     ~%~
+               └ 0   3 12     heh~%"))
+
+(defun dbp.markup.1 ()  
+  (dbp ?rsc :?s nil :p> (+ 1 2) (* 3 4) :m> :lol cnl nl cnl cnl "heh"))
+
+(defparameter *dbp-expected-3*
+  (format
+   nil
+"┌ 0   :--      :OPANA :L~%~
+ │ 0   :--      -!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!~%~
+ │ 0   :--      -=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!-=+!~%~
+ │ 0   :--      =%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%~%~
+ │ 0   :--      $@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$$@$~%~
+ └ 0   :--      :OPANA :THIS-IS-L-SYMBOLS-VALUE~%"))
+
+(defun dbp.markup.2 ()
+  (let ((l :this-is-l-symbols-value))
+    (dbp ?rsc :?s nil
+         :p> :-- :m> :l :opana :l :l nl d-! nl d-=+! nl d=% d$@$ l :opana l l)))
+
+(defparameter *dbp-expected-4*
+  (format nil "~A~%"
+"┌ 0   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+│ 0   ~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
+│ 0   ~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~~=~
+└ 0   ~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*"))
+
+(defun dbp.markup.3 ()
+  (dbp ?rsc :?s nil d ~ d~- d ~=~ d~~*))
+
+(defun validate.eval-sequence.1 (val-list)
+  (destructuring-bind (str v0 v1 v2 v3 v4)
+      val-list
+    (and (string= str (format nil "• 0   (:A :B :C) :A (:B :C) 6 20~%"))
+         (= v0 20)
+         (= v1 6)
+         (= v2 10)
+         (= v3 3)
+         (eq v4 :a))))
+
+(defun dbp.eval-sequence.0 ()
+  (multiple-value-bind (str v0 v1 v2 v3 v4)
+      (let ((lst '(:a :b :c)))
+        (dbp ?rsc :?s nil lst pr= (pop lst) lst
+             r= (+ 1 2) r= 10 pr= (* 2 3) pr= 20))
+    (list str v0 v1 v2 v3 v4)))
+
+(defparameter *dbp-expected-5*
+  (format nil "• 0   1        2 3~%~
+               ┌ 1   3        4~%~
+               │ 1   3        5~%~
+               │ 1   3        6~%~
+               └ 1   3        7~%"))
+
+(defun dbp.eval-sequence.1 ()
+  (with-output-to-string (s)
+    (let ((i 1))
+      (dbp-reset-counter)
+      (dbp :?s s :p> i :m> (incf i) (incf i))
+      (dbp :?s s :p> i :m> (incf i) nl (incf i) nl (incf i) nl (incf i)))))
+
+(defparameter *dbp-expected-6*
+  (format nil "• 0   1        2 :RETURNED 4~%~
+               ┌ 1   4        5~%~
+               │ 1   4        :PRINT-RETURNED 6~%~
+               │ 1   4        7~%~
+               └ 1   4        8~%~
+               • 2   3 :-- 6~%"))
+
+(defun dbp.eval-sequence.2 ()
+  (with-output-to-string (s)
+    (let ((i 1))
+      (dbp-reset-counter)
+      (let ((ret1
+             (dbp :?s s :p> i :m> (incf i) :returned r= (incf i) (incf i)))
+            (ret2
+             (dbp :?s s :p> i :m> (incf i) nl :print-returned pr= (incf i) nl
+                  (incf i) nl (incf i))))
+        (dbp :?s s ret1 :-- ret2)))))
+
+(define-test dbp-stream
+  (:tag :dbp :dbp-stream)
+  (assert-true (string= *dbp-expected-1* (dbp.stream.1)))
+  (assert-true (string= *dbp-expected-1* (dbp.stream.2)))
+  (assert-true (string= *dbp-expected-1* (dbp.stream.3))))
+
+(define-test dbp-markup
+  (:tag :dbp :dbp-markup)
+  (assert-true (string= *dbp-expected-2* (dbp.markup.1)))
+  (assert-true (string= *dbp-expected-3* (dbp.markup.2)))
+  (assert-true (string= *dbp-expected-4* (dbp.markup.3))))
+
+(define-test dbp-eval-sequence
+  (:tag :dbp :dbp-eval-sequence)  
+  (assert-true (validate.eval-sequence.1 (dbp.eval-sequence.0)))
+  (assert-true (string= *dbp-expected-5* (dbp.eval-sequence.1)))
+  (assert-true (string= *dbp-expected-6* (dbp.eval-sequence.2))))
+
+;; TODO: tests on dbp options
 
 (defmacro test (&rest run)
   `(let* ((*print-failures* t)

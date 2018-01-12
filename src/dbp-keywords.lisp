@@ -5,7 +5,7 @@
   (defmacro kw/instance-of (class-sym)
     `(lambda (lexem-next-args)
        (list (make-instance ,class-sym) lexem-next-args)))
-  
+
   (defun kw/take1-to-string (lexem-next-args)
     (list (princ-to-string (first lexem-next-args))
           (rest lexem-next-args)))
@@ -21,7 +21,8 @@
   (defun gensym? (form &optional (name "G"))
     (unless (or (stringp form)
                 (characterp form)
-                (numberp form))
+                (numberp form)
+                (keywordp form))
       (gensym name)))
 
   (defun form->regular-token (form)
@@ -43,7 +44,7 @@
     (list (make-instance 'newline-token :conditional? conditional?)
           lexem-next-args))
 
-  (defun form->return-token (form print?)
+  (defun form->return-token (form &optional print?)
     (make-instance 'return-token
                    :form form
                    :generated-symbol (gensym? form "RETURNED")
@@ -58,20 +59,20 @@
        :for (name . (value parse-fn))
        :in (hash-table-alist keywords-ht)
        :when (string-equal value lexem)
-         :return (funcall parse-fn lexem-next-args)))  
+       :return (funcall parse-fn lexem-next-args)))
 
   (defun kw/options (keywords-ht lexem lexem-next-args)
     (loop
        :for (name . (value default parse-fn))
        :in (hash-table-alist keywords-ht)
        :when (string-equal value lexem)
-         :do (destructuring-bind (value-to-use rest-args)
-                 (funcall parse-fn lexem-next-args)
-               (return
-                 (list (make-instance 'option-token
-                                      :name name
-                                      :value value-to-use)
-                       rest-args)))))
+       :do (destructuring-bind (value-to-use rest-args)
+               (funcall parse-fn lexem-next-args)
+             (return
+               (list (make-instance 'option-token
+                                    :name name
+                                    :value value-to-use)
+                     rest-args)))))
 
   ;; functions that access *keywords* directly are prefixed with kw^
   (defparameter *keywords*
