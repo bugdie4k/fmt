@@ -1,4 +1,4 @@
-(in-package :cl-user)
+(in-package #:cl-user)
 
 (defpackage #:fmt-test
   (:nicknames #:f-tst)
@@ -7,16 +7,22 @@
                 #:define-test
                 #:assert-true
                 #:run-tests
-                #:*print-failures*)
+                #:run-tags
+                #:*print-failures*
+                #:*print-errors*
+                #:*print-summary*
+                #:*summarize-results*
+                #:print-errors
+                #:print-failures)
   (:export #:test-fmt
            #:test-dbp
            #:test-all))
 
-(in-package :fmt-test)
+(in-package #:fmt-test)
 
 (defun fmt.0 ()
   (let ((*standard-output* (make-string-output-stream)))
-    (fmt "~ ~~ :: :A" :argument)
+    (fmt "~ ~~ :: :7@A" :heh)
     (get-output-stream-string *standard-output*)))
 
 (defparameter *fmt-common-control-string* ":{~test:::5@A-:S-:4R-:{:A:^+:}:}")
@@ -48,6 +54,7 @@
 
 (define-test fmt
   (:tag :fmt)
+  (assert-true (string= "~ ~~ :     HEH" (fmt.0)))
   (assert-true (string= *fmt-expected-1* (fmt.1)))
   (assert-true (string= *fmt-expected-1* (fmt.2)))
   (assert-true (string= *fmt-expected-1* (fmt.3)))
@@ -71,21 +78,25 @@
      (fmt4l :s s ,*fmt4l-common-control-string*
             ,@*fmt4l-common-format-args*)))
 
+(defmacro fmt4l.3 ()
+  `(fmt4l :s nil ,*fmt4l-common-control-string*
+          ,@*fmt4l-common-format-args*))
+
 (defparameter *fmt4l-expected-2* "1>==2>==A>==(o p a n a)>==5>")
 
-(defmacro fmt4l.3 ()
+(defmacro fmt4l.4 ()
   `(fmt4l :s nil :d "=="
           ,*fmt4l-common-control-string*
           ,@*fmt4l-common-format-args*))
 
-(defmacro fmt4l.4 ()
+(defmacro fmt4l.5 ()
   `(fmt4l :d "==" :s nil
           ,*fmt4l-common-control-string*
           ,@*fmt4l-common-format-args*))
 
 (defparameter *fmt4l-expected-3* "1>==2>==A>==(o p a n a)>==5>==")
 
-(defmacro fmt4l.5 ()
+(defmacro fmt4l.6 ()
   `(fmt4l :d+ "==" :s nil
           ,*fmt4l-common-control-string*
           ,@*fmt4l-common-format-args*))
@@ -93,8 +104,8 @@
 (defparameter *fmt4l-expected-4*
   (concatenate 'string *fmt4l-expected-3* (list #\newline)))
 
-(defmacro fmt4l.6 ()
-  `(fmt4l :d+ "==" :s nil :nl
+(defmacro fmt4l.7 ()
+  `(fmt4l :s nil :d+ "==" :nl
           ,*fmt4l-common-control-string*
           ,@*fmt4l-common-format-args*))
 
@@ -102,10 +113,11 @@
   (:tag :fmt :fmt4l)
   (assert-true (string= *fmt4l-expected-1* (fmt4l.1)))
   (assert-true (string= *fmt4l-expected-1* (fmt4l.2)))
-  (assert-true (string= *fmt4l-expected-2* (fmt4l.3)))
+  (assert-true (string= *fmt4l-expected-1* (fmt4l.3)))
   (assert-true (string= *fmt4l-expected-2* (fmt4l.4)))
-  (assert-true (string= *fmt4l-expected-3* (fmt4l.5)))
-  (assert-true (string= *fmt4l-expected-4* (fmt4l.6))))
+  (assert-true (string= *fmt4l-expected-2* (fmt4l.5)))
+  (assert-true (string= *fmt4l-expected-3* (fmt4l.6)))
+  (assert-true (string= *fmt4l-expected-4* (fmt4l.7))))
 
 (defparameter *fmts-common-control-string* ":A")
 
@@ -123,26 +135,95 @@
           (*fmts-common-control-string* 2))
     (get-output-stream-string *standard-output*)))
 
+(defun fmts.3 ()
+  (with-output-to-string (s)
+    (fmts :d "<br>" :s s
+          (*fmts-common-control-string* 1)
+          (*fmts-common-control-string* 2))))
+
 (defparameter *fmts-expected-2* (concatenate 'string *fmts-expected-1* "<br>"))
 
-(defmacro fmts.3 ()
-  `(fmts :s nil :d+ "<br>"
-         (*fmts-common-control-string* 1)
-         (*fmts-common-control-string* 2)))
+(defun fmts.4 ()
+  (fmts :s nil :d+ "<br>"
+        (*fmts-common-control-string* 1)
+        (*fmts-common-control-string* 2)))
 
-(defmacro fmts.4 ()
-  `(with-output-to-string (s)
-     (fmts :s s :d+ "<br>"
+(defun fmts.5 ()
+  (with-output-to-string (s)
+     (fmts :d+ "<br>" :s s
            (*fmts-common-control-string* 1)
            (*fmts-common-control-string* 2))))
+
+(defparameter *fmts-expected-3*
+  "1
+- 2
+- 1>2>A>(o p a n a)>5>
+- 1
+-- 2
+-- 1>2>A>(o p a n a)>5>
+-- 1
+--- 2
+--- 1>2>A>(o p a n a)>5>")
+
+;; obscure features
+(defmacro fmts.6 ()
+  `(fmts :s nil :d ":%- "
+         (,*fmts-common-control-string* 1)
+         (,*fmts-common-control-string* 2)
+         (:l ,*fmt4l-common-control-string*
+             ,@*fmt4l-common-format-args*)
+         (:s :d ":%-- "
+             (,*fmts-common-control-string* 1)
+             (,*fmts-common-control-string* 2)
+             (:l ,*fmt4l-common-control-string*
+                 ,@*fmt4l-common-format-args*)
+             (:s :d ":%--- "
+                 (,*fmts-common-control-string* 1)
+                 (,*fmts-common-control-string* 2)
+                 (:l ,*fmt4l-common-control-string*
+                     ,@*fmt4l-common-format-args*)))))
 
 (define-test fmts
   (:tag :fmt :fmts)
   (assert-true (string= *fmts-expected-1* (fmts.1)))
   (assert-true (string= *fmts-expected-1* (fmts.2)))
-  (assert-true (string= *fmts-expected-2* (fmts.3)))
-  (assert-true (string= *fmts-expected-2* (fmts.4))))
+  (assert-true (string= *fmts-expected-1* (fmts.3)))
+  (assert-true (string= *fmts-expected-2* (fmts.4)))
+  (assert-true (string= *fmts-expected-2* (fmts.5)))
+  (assert-true (string= *fmts-expected-3* (fmts.6))))
+
+(defparameter *dbp-expected-1*
+  (format nil 
+          "┌ 0   1 3      2~%~
+           └ 0   1 3      5~%"))
+
+(defun dbp.1 ()
+  (let ((*standard-output* (make-string-output-stream)))
+    (dbp :p> 1 :m> 2 :p> 3 :m> nl 5 ?rsc)
+    (get-output-stream-string *standard-output*)))
+
+(defun dbp.2 ()
+  (dbp :?s nil :p> 1 :m> 2 :p> 3 :m> nl 5 ?rsc))
+
+(define-test dbp
+  (:tag :dbp)
+  (assert-true (string= *dbp-expected-1* (dbp.1)))
+  (assert-true (string= *dbp-expected-1* (dbp.2))))
+
+(defmacro test (&rest run)
+  `(let* ((*print-failures* t)
+          (*print-errors* t)
+          (*print-summary* t)
+          (*summarize-results* t)
+          (test-results (,@run (find-package :fmt-test))))
+     (print-errors test-results)
+     (print-failures test-results)))
 
 (defun test-fmt ()
-  (let ((*print-failures* t))
-    (run-tests '(fmt fmt4l fmts))))
+  (test run-tags '(:fmt)))
+
+(defun test-dbp ()
+  (test run-tags '(:dbp)))
+
+(defun test-all ()
+  (test run-tests :all))

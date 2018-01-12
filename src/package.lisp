@@ -1,4 +1,4 @@
-(in-package :cl-user)
+(in-package #:cl-user)
 
 (defpackage #:fmt
   (:nicknames #:f)
@@ -7,7 +7,8 @@
                 #:mappend
                 #:curry
                 #:hash-table-values
-                #:hash-table-alist)
+                #:hash-table-alist
+                #:alist-hash-table)  
   (:export
    ;; fmt.lisp
    #:fmt

@@ -2,43 +2,96 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
-  (defun parse-initial-keywords (args &rest keywords)
-    (let ((keywords-ht (make-hash-table)))
-      (labels ((%keyword (keyword-el)
-                 (if (listp keyword-el) (first keyword-el) keyword-el))
-               (%num-to-take (keyword-el)
-                 (if (listp keyword-el) (second keyword-el) 0))
-               (%default-value (keyword-el)
-                 (if (listp keyword-el) (third keyword-el) nil))
-               (%find ()
-                 (find-if (curry #'eq (first args)) keywords :key #'%keyword))
-               (%take-next-args (num)
-                 (cond ((= num 0)
-                        (prog1 (first args)
-                          (setf args (rest args))))
-                       ((= num 1)
-                        (prog1 (second args)
-                          (setf args (nthcdr 2 args))))
-                       ((> num 1)
-                        (prog1 (subseq args 1 (1+ num))
-                          (setf args (nthcdr (1+ num) args))))
-                       (t (error "cannot take ~A (< 0) args" num))))
-               (%try-parse-kw ()
-                 (awhen (%find)
-                   (setf (gethash (%keyword it) keywords-ht)
-                         (%take-next-args (%num-to-take it)))
-                   t)))
-        (dotimes (i (length keywords))
-          (unless (%try-parse-kw)
-            (return)))
-        (append
-         (loop
-            :for kw :in keywords
-            :collect
-              (multiple-value-bind (val found?)
-                  (gethash (%keyword kw) keywords-ht)
-                (if found? val (%default-value kw))))
-         (list args)))))
+  (defun kw-keyword (keyword-def)
+    (if (listp keyword-def) (first keyword-def) keyword-def))
+
+  (defun kw-args-num-to-take (keyword-def)
+    (if (listp keyword-def) (second keyword-def) 0))
+
+  (defun kw-default-value (keyword-def)
+    (if (listp keyword-def) (third keyword-def) nil))
+
+  (defun find-kw (arg parsed-keywords keyword-definitions)
+    (unless (assoc arg parsed-keywords)
+      (find-if (curry #'eq arg)
+               keyword-definitions :key #'kw-keyword)))
+
+  (defun take-next-args (next-args num)
+    (cond ((= num 0) (values t next-args))
+          ((= num 1) (values (first next-args) (rest next-args)))
+          ((>= num 2) (values (subseq next-args 0 num)
+                              (nthcdr num next-args)))
+          (t (error "cannot take ~A (< 0) args" num))))
+
+  (defun parse-initial-keywords (args &key keyword-definitions)
+    (let ((kw-len (length keyword-definitions)))
+      (labels ((%parse (args &optional parsed-keywords (i 0))                 
+                 (if (>= i kw-len)
+                     (values parsed-keywords args)
+                     (aif (find-kw (first args) parsed-keywords
+                                   keyword-definitions)
+                          (multiple-value-bind (kw-value rest-args)
+                              (take-next-args (rest args)
+                                              (kw-args-num-to-take it))
+                            (%parse rest-args
+                                    (acons (kw-keyword it) kw-value
+                                           parsed-keywords)
+                                    (1+ i)))
+                          (values parsed-keywords args))))
+               (%collect-kw-return-list (parsed-keywords)
+                 (loop
+                    :for kw-def :in keyword-definitions
+                    :collect
+                      (aif (assoc (kw-keyword kw-def) parsed-keywords)
+                           (cdr it)
+                           (kw-default-value kw-def)))))
+        (multiple-value-bind (parsed-keywords rest-args)
+            (%parse args)
+          (append
+           (%collect-kw-return-list parsed-keywords)
+           (list rest-args))))))
+
+  ;; (defun parse-initial-keywords (args &rest keywords)
+  ;;   (let ((keywords-ht (make-hash-table)))
+  ;;     (labels ((%keyword (keyword-el)
+  ;;                (if (listp keyword-el) (first keyword-el) keyword-el))
+  ;;              (%num-to-take (keyword-el)
+  ;;                (if (listp keyword-el) (second keyword-el) 0))
+  ;;              (%default-value (keyword-el)
+  ;;                (if (listp keyword-el) (third keyword-el) nil))
+  ;;              (%find ()
+  ;;                (multiple-value-bind (val found?)
+  ;;                    (gethash (first args keywords-ht))
+  ;;                  (unless found?
+  ;;                    (find-if (curry #'eq (first args))
+  ;;                             keywords :key #'%keyword))))
+  ;;              (%take-next-args (num)
+  ;;                (cond ((= num 0)
+  ;;                       (prog1 (first args)
+  ;;                         (setf args (rest args))))
+  ;;                      ((= num 1)
+  ;;                       (prog1 (second args)
+  ;;                         (setf args (nthcdr 2 args))))
+  ;;                      ((> num 1)
+  ;;                       (prog1 (subseq args 1 (1+ num))
+  ;;                         (setf args (nthcdr (1+ num) args))))
+  ;;                      (t (error "cannot take ~A (< 0) args" num))))
+  ;;              (%try-parse-kw ()
+  ;;                (awhen (%find)
+  ;;                  (setf (gethash (%keyword it) keywords-ht)
+  ;;                        (%take-next-args (%num-to-take it)))
+  ;;                  t)))
+  ;;       (dotimes (i (length keywords))
+  ;;         (unless (%try-parse-kw)
+  ;;           (return)))
+  ;;       (append
+  ;;        (loop
+  ;;           :for kw :in keywords
+  ;;           :collect
+  ;;             (multiple-value-bind (val found?)
+  ;;                 (gethash (%keyword kw) keywords-ht)
+  ;;               (if found? val (%default-value kw))))
+  ;;        (list args)))))
 
   (defun translate-pair (ch1 ch2 fmt-chars)
     (cond ((char= ch1 #\~)
@@ -201,7 +254,7 @@ DESCRIPTION
       `:nl' adds newline in the end (same as :% would).
       Does the same as format - prints to stream."
   (destructuring-bind (stream newline fmt-string/args)
-      (parse-initial-keywords args '(:s 1 t) :nl)
+      (parse-initial-keywords args :keyword-definitions '((:s 1 t) :nl))
     (fmt-aux (first fmt-string/args) (rest fmt-string/args)
              :stream stream :newline newline :translate? t)))
 
@@ -219,7 +272,9 @@ DESCRIPTION
        `:d+' does the same and also ends delimiter to the end.
        Delimiter is also translated (~ -> :)."
   (destructuring-bind (stream newline delimiter delimiter+ fmt-string/args)
-      (parse-initial-keywords args '(:s 1 t) :nl '(:d 1) '(:d+ 1))
+      (parse-initial-keywords
+       args
+       :keyword-definitions '((:s 1 t) :nl (:d 1) (:d+ 1)))
     (fmt4l-aux (first fmt-string/args) (rest fmt-string/args)
                delimiter delimiter+
                :stream stream :newline newline :translate? t)))
@@ -236,7 +291,9 @@ DESCRIPTION
       `:d' allows to set a delimiter to insert between fmts.
        `:d+' does the same and also ends delimiter to the end."
   (destructuring-bind (stream delimiter delimiter+ fmt-lists)
-      (parse-initial-keywords args '(:s 1 t) '(:d 1) '(:d+ 1))
+      (parse-initial-keywords
+       args
+       :keyword-definitions '((:s 1 t) (:d 1) (:d+ 1)))
     (fmts-aux fmt-lists delimiter delimiter+
               :stream stream :translate? t)))
 
@@ -247,7 +304,9 @@ DESCRIPTION
       You can omit stream argument - t is default.
       `:nl' adds newline in the end (same as :% would)."
   (destructuring-bind (stream newline format-string/args)
-      (parse-initial-keywords args '(:s 1 t) :nl)
+      (parse-initial-keywords
+       args
+       :keyword-definitions '((:s 1 t) :nl))
     (fmt-aux (first format-string/args) (rest format-string/args)
              :stream stream :newline newline :translate? t)))
 
@@ -262,7 +321,9 @@ DESCRIPTION
        `:d' allows to set a delimiter to insert between elements.
        `:d+' does the same and also ends delimiter to the end."
   (destructuring-bind (stream newline delimiter delimiter+ format-string/args)
-      (parse-initial-keywords args '(:s 1 t) :nl '(:d 1) '(:d+ 1))
+      (parse-initial-keywords
+       args
+       :keyword-definitions '((:s 1 t) :nl (:d 1) (:d+ 1)))
     (fmt4l-aux (first format-string/args) (rest format-string/args)
                delimiter delimiter+
                :stream stream :newline newline :translate? t)))
@@ -277,7 +338,9 @@ DESCRIPTION
       `:d' allows to set a delimiter to insert between format statements.
        `:d+' does the same and also ends delimiter to the end."
   (destructuring-bind (stream delimiter delimiter+ format-lists)
-      (parse-initial-keywords args '(:s 1 t) '(:d 1) '(:d+ 1))
+      (parse-initial-keywords
+       args
+       :keyword-definitions '((:s 1 t) (:d 1) (:d+ 1)))
     (fmts-aux format-lists delimiter delimiter+
               :stream stream :translate? t)))
 
@@ -315,7 +378,9 @@ DESCRIPTION
        Delimiter is also translated (~ -> :).
        Does the same as break."
   (destructuring-bind (stream delimiter delimiter+ fmt-string/args)
-      (parse-initial-keywords args '(:s 1 t) '(:d 1) '(:d+ 1))
+      (parse-initial-keywords
+       args
+       :keyword-definitions '((:s 1 t) (:d 1) (:d+ 1)))
     (fmt4l-aux (first fmt-string/args) (rest fmt-string/args)
                delimiter delimiter+ :stream stream
                :target :break :translate? t)))
