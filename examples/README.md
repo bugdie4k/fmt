@@ -2,7 +2,7 @@
 
 ## dbp.1
 
-**FORM:**
+FORM:
 ``` common-lisp
 (fmt:dbp :p> "PREFIX STR>>"
          :m> "MESSAGE GOES HERE. newline->" :nl
@@ -10,7 +10,7 @@
              "another delimiter->" :d~=-*)
 ```
 
-**PRINTS TO `*STANDARD-OUTPUT*`:**
+PRINTS TO `*STANDARD-OUTPUT*`:
 
 ```
 ┌ 0   PREFIX STR>> MESSAGE GOES HERE. newline->
@@ -20,12 +20,10 @@
 └ 0   PREFIX STR>> ~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*~=-*
 ```
 
-**RETURNS:**
+RETURNS:
 ```
 NIL
 ```
-
-<hr/>
 
 ## dbp.2
 
@@ -44,8 +42,6 @@ NIL
 ```
 9
 ```
-
-<hr/>
 
 ## dbp.3
 
@@ -76,8 +72,6 @@ NIL
 3
 ```
 
-<hr/>
-
 ## dbp.4
 
 **FORM:**
@@ -94,8 +88,6 @@ NIL
 ```
 NIL
 ```
-
-<hr/>
 
 ## dbp.5
 
@@ -129,8 +121,6 @@ NIL
 NIL
 ```
 
-<hr/>
-
 ## fmt.1
 
 **FORM:**
@@ -142,8 +132,6 @@ NIL
 ```
 str : ~ : "str"
 ```
-
-<hr/>
 
 ## fmt.2
 
@@ -157,8 +145,6 @@ str : ~ : "str"
 1,2,3,4
 ```
 
-<hr/>
-
 ## fmt4l.1
 
 **FORM:**
@@ -170,8 +156,6 @@ str : ~ : "str"
 ```
 1--2--3--4--
 ```
-
-<hr/>
 
 ## fmt4l.2
 
@@ -185,8 +169,6 @@ str : ~ : "str"
 1==2==3==4
 ```
 
-<hr/>
-
 ## fmt4l.3
 
 **FORM:**
@@ -198,8 +180,6 @@ str : ~ : "str"
 ```
 1==2==3==4==
 ```
-
-<hr/>
 
 ## fmts.1
 
@@ -213,8 +193,6 @@ str : ~ : "str"
 ```
 string1 "string2"
 ```
-
-<hr/>
 
 ## fmts.2
 
@@ -232,8 +210,6 @@ string1
 "string2"
 ```
 
-<hr/>
-
 ## echo.1
 
 **FORM:**
@@ -245,8 +221,6 @@ string1
 ```
 1 2 "DON'T CARE, PRINT" :ANYTHING (42 #<CLASS COMMON-LISP:NIL {100570B163}>)
 ```
-
-<hr/>
 
 ## echo.2
 
@@ -261,5 +235,3 @@ string1
 ```
 1 2 3 4
 ```
-
-<hr/>
