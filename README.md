@@ -11,6 +11,9 @@ See [examples](examples) or [tests](test/test.lisp).
 - [Documentation](#documentation)
   - [`fmt` and friends](#fmt-and-friends)
   - [`dbp` (and `dbp-reset-counter`)](#dbp-and-dbp-reset-counter)
+    - [`dbp` message structure](#dbp-message-structure)
+    - [`dbp` returns](#dbp-returns)
+    - [`dbp` keywords](#dbp-keywords)
 
 # Motivation
 
@@ -223,7 +226,7 @@ Same as break, but with different syntax.
 <hr/>
 
 ## `dbp` (and `dbp-reset-counter`)
-### ([examples](examples#dbp1))
+#### ([examples](examples#dbp1))
 
 `dbp` accepts arguments that will be used to construct the log message.
 There are *keywords* that have some special effect on debug message.
@@ -249,20 +252,21 @@ produces the following output (except my comment on the message structure, of co
   "-------------------------------------------> CLIP
 ```
 
-- MESSAGE
+- MESSAGE  
   The message is entered after the `m>` keyword.
   Or if no *section designating* (that is `p>` or `m>`) keywords were entered.
+ 
+- PREFIX 
+  The prefix is entered after the `p>` keyword and is inserted after each newline
+  in message along with COUNTER and CLIP.
 
-- PREFIX
-  The prefix is entered after the `p>` keyword.
-
-- COUNTER
+- COUNTER  
   The counter is the unique number of a log message. 
   After each `dbp` call the internal counter increments. 
   It can be reset with the `dbp-reset-counter` function or with the `?rsc` keyword.
   Remove it with the `?no-counter` keyword.
 
-- CLIP
+- CLIP  
   The clip (maybe not the best name for a thing?) is intended to help to distigush
   a separate multiline message among the other outputted text.
   Remove it with the `?no-clip` keyword.
