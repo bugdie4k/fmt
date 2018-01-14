@@ -1,4 +1,4 @@
-NOTE: True for SBCL on Linux
+**NOTE:** True for SBCL on Linux
 
 ## dbp.1
 
@@ -8,10 +8,10 @@ NOTE: True for SBCL on Linux
          :m> "MESSAGE GOES HERE. newline->" :nl
              "MESSAGE ON THE SECOND LINE. delimiter->" :d-
              "another delimiter->" :d~=-*)
-n
 ```
 
 **PRINTS TO `*STANDARD-OUTPUT*`:**
+
 ```
 ┌ 0   PREFIX STR>> MESSAGE GOES HERE. newline->
 │ 0   PREFIX STR>> MESSAGE ON THE SECOND LINE. delimiter->

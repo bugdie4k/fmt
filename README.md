@@ -2,7 +2,7 @@
 
 # tl;dr
 
-See [examples](https://github.com/bugdie4k/fmt/tree/master/examples) or [tests](https://github.com/bugdie4k/fmt/blob/master/test/test.lisp).
+See [examples](examples) or [tests](test/test.lisp).
 
 # Contents
 
@@ -92,7 +92,7 @@ that can be used to create horizontal rule delimiters.
 
 ## `fmt` and friends
 
-### fmt ([examples](https://github.com/bugdie4k/fmt/tree/master/examples#fmt1))
+### fmt ([examples](examples#fmt1))
 
 **SYNOPSIS**  
 `(fmt [ :s stream ] [ :nl ] fmt-string fmt-args*)`
@@ -110,7 +110,7 @@ You can omit stream argument - `t` is default.
       
 <hr/>
 
-### fmt4l ([examples](https://github.com/bugdie4k/fmt/tree/master/examples#fmt4l1))
+### fmt4l ([examples](examples#fmt4l1))
 
 **SYNOPSIS**  
 `(fmt4l [ :s stream ] [ :nl ] 
@@ -130,7 +130,7 @@ so you can specify `:%` as a delimiter to delimit with newline.
 
 <hr/>
 
-### fmts ([examples](https://github.com/bugdie4k/fmt/tree/master/examples#fmts1))
+### fmts ([examples](examples#fmts1))
 
 **SYNOPSIS**  
 `(fmts [ :s stream ] [ [ :d | :d+] delimiter ]
@@ -144,7 +144,7 @@ are the same as in `fmt`.
 
 <hr/>
 
-### echo ([examples](https://github.com/bugdie4k/fmt/tree/master/examples#echo1))
+### echo ([examples](examples#echo1))
 
 **SYNOPSIS**  
 `(echo [ :-nl ] arg*)`
@@ -230,12 +230,30 @@ There are *keywords* that have some special effect on debug message.
 If argument is not a *keyword*, it is printed as with `~S` formatting 
 (it can be altered with the `?fletter` option).
 
-## TODO: structure of dbp message
+This call
+``` common-lisp
+(fmt:dbp :p> :prefix-> :m> 1 d-= 2 r= 10 r= "20")
+```
+produces the following output (except my comment on the message structure, of course)
+```
+┌ 5   :PREFIX-> 1
+│ 5   :PREFIX-> -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+└ 5   :PREFIX-> 2
+```
+it's structure
+```
+\ \_/ \_______/ \__________________________________________________________/
+|  |      |                               |
+\  |      \                               \-- MESSAGE (set with m>)
+ \ \       \--------------------------------- PREFIX (set with :p>)
+  \ \---------------------------------------- COUNTER (unique number of a log message)
+   \----------------------------------------- CLIP (it's use is to help to distinguish multiline messages among others)
+```
 
 `dbp` can return things from it's body using keywords `r=` and `pr=`.
 `r=` returns the folowing form from `dbp` call and does not print it.
 `pr=` both returns and prints.
-See examples [dbp.2 and dbp.3](examples#dbp2).
+See [examples dbp.2 and dbp.3](examples#dbp2).
 
 If there are multiple `r=` and `pr=` keywords `dbp` returns several values
 in order from right to left. 
