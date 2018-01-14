@@ -163,9 +163,21 @@ FORM
 (fmt:fmt :s s ":@{:A:^,:}" 1 2 3 4))
 ```
 
-PRINTS TO `*STANDARD-OUTPUT*`:
+PRINTS TO `s` STREAM:
 ```
 1,2,3,4
+```
+
+## fmt.3
+
+FORM
+``` common-lisp
+(fmt:fmt :s nil "=>:4A=>:4@A" :ABC :DEF)
+```
+
+RETURNS:
+```
+"=>ABC => DEF"
 ```
 
 ## fmt4l.1

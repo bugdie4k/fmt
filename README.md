@@ -25,7 +25,7 @@ And there were several things that bothered me about the process.
  
  I didn't like how tilde (`~`) is hard to type 
  when you type it a lot. And it's something you often have to do 
- when formatting your debug prints.
+ when formatting debug prints.
  
  - **The placing issue.**
  
@@ -43,20 +43,21 @@ And there were several things that bothered me about the process.
  
 So I've written this in an attempt to address these issues.  
 
-Then I got acquainted with different cool features of SLIME like
+Later I got acquainted with different cool features of
+[SLIME](https://common-lisp.net/project/slime/) like
 inspector, evaluating in frame, macroexpansion in place, 
 evaluation in place, how `(declaim (optimize (debug 3)))`
 gives you more information in debugger, etc.  
 
-Also I noticed that if you write `(format t "~@{~A~^ ~}~%" ARGS)` you
-can write anything instead of ARGS one by one and it will act like an echo.
+Also I noticed that if you write `(format t "~@{~A~^ ~}~%" arg*)` you
+can write anything in place of `arg*` one by one and it will act like an echo.
 The insertion of such a form is easily automated with any good text editor
 (Emacs + [yasnippet](https://github.com/joaotavora/yasnippet) for example) 
 and it proved to be quite handy.  
 
 I stopped using debug prints as much as I used to and the "echo" I "invented"
 made debug printing much easier. 
-But I always wanted to clean up the messy version of this lib, so here it is.
+But I always wanted to clean up the messy version of this lib and here it is.
 
 # Overview
 
@@ -67,7 +68,7 @@ file taking various forms.
 The [`fmt`](#fmt-and-friends)
 function has control-string that is just the same as 
 control-string of a format, but colon (`:`) is used to specify format directives
-instead of tilde (`~`). 
+instead of tilde (`~`) because typing colons is easier than typing tildes.
 
 This means that all the format directives of CL's `format`
 are now introduced by colon. `~A` becomes `:A`, `~%` becomes `:%`, etc.
@@ -126,19 +127,21 @@ produces the following output (except my comment on the message structure, of co
   Or if no *section designating* (that is `p>` or `m>`) keywords were entered.
  
 - **PREFIX**  
-  The prefix is entered after the `p>` keyword and is inserted after each newline
-  in message along with COUNTER and CLIP.
+  The prefix is entered after the `p>` keyword and is inserted after
+  each newline in message along with COUNTER and CLIP.
 
 - **COUNTER**  
   The counter is the unique number of a log message. 
   After each `dbp` call the internal counter increments. 
-  It can be reset with the `dbp-reset-counter` function or with the `?rsc` keyword.
-  Remove it with the `?no-counter` keyword.
+  It can be reset with the `dbp-reset-counter` function 
+  or with the `?rsc` keyword.
+  Remove counter from a message with the `?no-counter` keyword.
 
 - **CLIP**  
-  The clip (maybe not the best name for a thing?) is intended to help to distinguish
-  a separate multiline message among the other outputted text.
-  Remove it with the `?no-clip` keyword.
+  The clip (maybe not the best name for a thing?) is intended to help
+  to distinguish a separate multiline message among other messages and
+  outputted text.
+  Remove clip from a message with the `?no-clip` keyword.
   
 ### `dbp` returns
 
@@ -150,10 +153,13 @@ See [examples dbp.2 and dbp.3](examples#dbp2).
 If there are multiple `r=` and `pr=` keywords `dbp` returns several values
 in order from right to left. 
 Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returns
-the string with created message as the first value no matter what `r=` and `pr=`
-keywords are there in the body.
+the string with created message as the first value and all the other
+returns go after.
 
 ### `dbp` keywords
+
+Keywords are symbols. Either keyword symbols or normal.
+They are determined by `symbol-name`.
 
 #### Section designators
 
@@ -173,7 +179,7 @@ See this [example](example#dbp6).
 
 #### Markup
 
-There are several "markup" keywords that define the looks of a message.
+There are several "markup" keywords that can change looks of a message.
 
 - `d` - delimiter  
 
@@ -181,10 +187,10 @@ There are several "markup" keywords that define the looks of a message.
   
   Creates a horizontal rule composed of `pattern`
   which can be a symbol, a string, a keyword symbol or anything else
-  because `pattern` goes through `princ-to-string`.
+  because `pattern` goes through `princ-to-string` before it's applied.
   
   - **NOTE:** there is a special syntax for `d`.
-    All keyword symbols that start with d also create horizontal rule.
+    All keyword symbols that start with `d` also create horizontal rule.  
     That is `:d--` and `d --` are equal.
   
 - `nl` - newline  
@@ -214,7 +220,7 @@ There are several "markup" keywords that define the looks of a message.
 
   USAGE: `pr= arg`
   
-  Adds `arg` to returned values and prints it.  
+  Adds `arg` to returned values and also lets `dbp` print it.  
 
 #### Options
 
@@ -265,7 +271,7 @@ There are several "markup" keywords that define the looks of a message.
 
     USAGE: `?prefix-w num`
     
-    Default is83.
+    Default is 83.
     
 - `?cut-counter`
 
@@ -419,5 +425,3 @@ Same as break, but with different syntax.
 
 **DESCRIPTION**  
 `echo`'s breaking counterpart.
-
-<hr/>
