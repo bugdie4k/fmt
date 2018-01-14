@@ -239,9 +239,6 @@ produces the following output (except my comment on the message structure, of co
 ┌ 5   :PREFIX-> 1
 │ 5   :PREFIX-> -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 └ 5   :PREFIX-> 2
-```
-it's structure
-```
 \ \_/ \_______/ \__________________________________________________________/
 |  |      |                               |
 \  |      \                               \-- MESSAGE (set with m>)
