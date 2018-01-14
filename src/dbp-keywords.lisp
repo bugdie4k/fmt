@@ -36,7 +36,7 @@
 
   (defun kw/delimiter (lexem-next-args)
     (list (make-instance 'delim-token
-                         :pattern (format nil "~A"
+                         :pattern (princ-to-string
                                    (first lexem-next-args)))
           (rest lexem-next-args)))
 
@@ -99,9 +99,9 @@
                 (:delimiter-width "?dw"             60  #'kw/take1)
                 (:counter-width   "?counter-w"      3   #'kw/take1)
                 (:prefix-width    "?prefix-w"       8   #'kw/take1)
-                (:break           "?break"          nil (kw/set-to t))
                 (:cut-counter     "?cut-counter"    nil (kw/set-to t))
                 (:cut-prefix      "?cut-prefix"     nil (kw/set-to t))
+                (:break           "?break"          nil (kw/set-to t))
                 (:reset-counter   "?rsc"            nil (kw/set-to t))
                 (:no-end-newline  "?no-end-newline" nil (kw/set-to t))
                 (:no-counter      "?no-counter"     nil (kw/set-to t))

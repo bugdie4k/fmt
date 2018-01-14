@@ -36,7 +36,7 @@ And there were several things that bothered me about the process.
  - **The delimiter issue.**
  
  I didn't like that to print a clear
- delimiter for pieces of debug information everytime I had
+ delimiter for pieces of debug information every time I had
  to do something like `(format t "~%------~%")`,  
  then `(format t "~%======~%")`, then `(format t "~%=!=!=!~%")`, and so on. 
  
@@ -69,7 +69,7 @@ control-string of a format, but colon (`:`) is used to specify format directives
 instead of tilde (`~`). 
 
 This means that all the format directives of CL's `format`
-are now intoduced by colon. `~A` becomes `:A`, `~%` becomes `:%`, etc.
+are now introduced by colon. `~A` becomes `:A`, `~%` becomes `:%`, etc.
 Also if you want to print a tilde, you just type a tilde, 
 but if you wand to print
 colon, you have to "backslash" colon by colon (`::`). 
@@ -267,14 +267,14 @@ produces the following output (except my comment on the message structure, of co
   Remove it with the `?no-counter` keyword.
 
 - **CLIP**  
-  The clip (maybe not the best name for a thing?) is intended to help to distigush
+  The clip (maybe not the best name for a thing?) is intended to help to distinguish
   a separate multiline message among the other outputted text.
   Remove it with the `?no-clip` keyword.
   
 ### `dbp` returns
 
 `dbp` can return things from it's body using keywords `r=` and `pr=`.
-`r=` returns the folowing form from `dbp` call and does not print it.
+`r=` returns the following form from `dbp` call and does not print it.
 `pr=` both returns and prints.
 See [examples dbp.2 and dbp.3](examples#dbp2).
 
@@ -291,36 +291,41 @@ keywords are there in the body.
 There are two sections you can define: *prefix* and *message*.
 Keywords for these are:
 
-- `p>` - prefix
+- `p>` - prefix  
+
   USAGE: `p> arg*`
-- `m>` - message
+  
+- `m>` - message  
+
   USAGE: `m> arg*`
 
 Note that there can be several `p>` and `m>` in one `dbp` call in random order.
-See [example](example#dbp6)
+See this [example](example#dbp6).
 
 #### Markup
 
 There are several "markup" keywords that define the looks of a message.
 
 - `d` - delimiter  
+
   USAGE: `d pattern`
   
   Creates a horizontal rule composed of pattern.
   Pattern can be symbol, string, keyword symbol or anything else. 
-  The pattern goes thru `(format nil "~A" pattern)`.
+  The pattern goes through `princ-to-string`.
   
   - **NOTE:** there is a special syntax for `d`.
     All keyword symbols that start with d also create horizontal rule.
     That is `:d--` and `d --` are equal.
   
-- `nl` - newline    
+- `nl` - newline  
   Plainly translated to "~%".
   
-- `cnl` - conditional newline
+- `cnl` - conditional newline  
   Plainly translated to "~&".
   
-- `l` - literally
+- `l` - literally  
+
   USAGE: `l arg`
   
   Used to "backslash" keywords and print them literally.
@@ -328,8 +333,86 @@ There are several "markup" keywords that define the looks of a message.
 
 #### Returns
 
+- `r=` - return  
+
+  USAGE: `r= arg`
+  
+  Adds `arg` to returned values.
+  
+- `pr=` - print return  
+
+  USAGE: `pr= arg`
+  
+  Adds `arg` to returned values and prints it.  
+
 #### Options
 
+- `?wd` - word delimiter
 
+    USAGE: `?wd arg`
+    
+    The arg goes through `princ-to-string` and becomes word delimiter.
+    
+    Default is space.
+    
+- `?fletter` - format letter
 
+    USAGE: `?fletter arg`
+    
+    The arg goes through `princ-to-string` and becomes new
+    format letter instead of `S`. Do not use tilde (`~`) when 
+    entering format letter in arg - it is implied and added automatically.
+    
+    Default is `S`.
+    
+- `?s` - stream 
 
+    USAGE: `?s stream`
+    
+    Stream can also be `t` or `nil`.
+    `t` means printing to `*standard-output*`.
+    `nil` means that string with message will be returned as the first argument
+    from `dbp` call.
+    
+    Default is `t`.
+    
+- `?dw` - delimiter width
+
+    USAGE: `?dw num`
+    
+    Sets the length of delimiters printed by `d` keyword.
+    
+    Default is 60.
+    
+- `?counter-w` - counter width
+
+    USAGE: `?counter-w num`
+    
+    Default is 3.
+    
+- `?prefix-w` - counter width
+
+    USAGE: `?prefix-w num`
+    
+    Default is83.
+    
+- `?cut-counter`
+
+    If met cuts counter upto counter width.    
+
+- `?cut-prefix`
+
+    If met cuts prefix upto prefix width.    
+    
+- `?break` - break
+  
+  If meats `?break` keyword ignores stream set with `?s`
+  and breaks with constructed message.
+  
+- `?rsc` - reset counter
+
+- `?no-end-newline`
+
+- `?no-counter`
+
+- `no-clip`
