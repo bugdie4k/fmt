@@ -37,8 +37,9 @@ And there were several things that bothered me about the process.
  
  I didn't like that to print a clear
  delimiter for pieces of debug information every time I had
- to do something like `(format t "~%------~%")`,
- then `(format t "~%======~%")`, then `(format t "~%=!=!=!~%")`, and so on. 
+ to do something like  
+ `(format t "~%------~%")`, then `(format t "~%======~%")`, 
+ then `(format t "~%=!=!=!~%")`, and so on. 
  
 So I've written this in an attempt to address these issues.  
 
