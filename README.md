@@ -230,6 +230,8 @@ There are *keywords* that have some special effect on debug message.
 If argument is not a *keyword*, it is printed as with `~S` formatting 
 (it can be altered with the `?fletter` option).
 
+### `dbp` message structure
+
 This call
 ``` common-lisp
 (fmt:dbp :p> :prefix-> :m> 1 d-= 2 r= 10 r= "20")
@@ -239,13 +241,33 @@ produces the following output (except my comment on the message structure, of co
 ┌ 5   :PREFIX-> 1
 │ 5   :PREFIX-> -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 └ 5   :PREFIX-> 2
-\ \_/ \_______/ \__________________________________________________________/
-|  |      |                               |
-\  |      \                               \-- MESSAGE (set with m>)
- \ \       \--------------------------------- PREFIX (set with :p>)
-  \ \---------------------------------------- COUNTER (unique number of a log message)
-   \----------------------------------------- CLIP (it's use is to help to distinguish multiline messages among others)
+| \_/ \_______/ \__________________________________________________________/
+|  |      |                               \
+|  |       \                               "--> MESSAGE
+|   \       "---------------------------------> PREFIX
+ \   "----------------------------------------> COUNTER
+  "-------------------------------------------> CLIP
 ```
+
+- MESSAGE
+  The message is entered after the `m>` keyword.
+  Or if no *section designating* (that is `p>` or `m>`) keywords were entered.
+
+- PREFIX
+  The prefix is entered after the `p>` keyword.
+
+- COUNTER
+  The counter is the unique number of a log message. 
+  After each `dbp` call the internal counter increments. 
+  It can be reset with the `dbp-reset-counter` function or with the `?rsc` keyword.
+  Remove it with the `?no-counter` keyword.
+
+- CLIP
+  The clip (maybe not the best name for a thing?) is intended to help to distigush
+  a separate multiline message among the other outputted text.
+  Remove it with the `?no-clip` keyword.
+  
+### `dbp` returns
 
 `dbp` can return things from it's body using keywords `r=` and `pr=`.
 `r=` returns the folowing form from `dbp` call and does not print it.
@@ -258,4 +280,6 @@ Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returns
 the string with created message as the first value no matter what `r=` and `pr=`
 keywords are there in the body.
 
+### `dbp` keywords
 
+TODO
