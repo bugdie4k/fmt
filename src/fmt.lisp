@@ -25,7 +25,7 @@
 
   (defun parse-initial-keywords (args &key keyword-definitions)
     (let ((kw-len (length keyword-definitions)))
-      (labels ((%parse (args &optional parsed-keywords (i 0))                 
+      (labels ((%parse (args &optional parsed-keywords (i 0))
                  (if (>= i kw-len)
                      (values parsed-keywords args)
                      (aif (find-kw (first args) parsed-keywords
@@ -50,48 +50,6 @@
           (append
            (%collect-kw-return-list parsed-keywords)
            (list rest-args))))))
-
-  ;; (defun parse-initial-keywords (args &rest keywords)
-  ;;   (let ((keywords-ht (make-hash-table)))
-  ;;     (labels ((%keyword (keyword-el)
-  ;;                (if (listp keyword-el) (first keyword-el) keyword-el))
-  ;;              (%num-to-take (keyword-el)
-  ;;                (if (listp keyword-el) (second keyword-el) 0))
-  ;;              (%default-value (keyword-el)
-  ;;                (if (listp keyword-el) (third keyword-el) nil))
-  ;;              (%find ()
-  ;;                (multiple-value-bind (val found?)
-  ;;                    (gethash (first args keywords-ht))
-  ;;                  (unless found?
-  ;;                    (find-if (curry #'eq (first args))
-  ;;                             keywords :key #'%keyword))))
-  ;;              (%take-next-args (num)
-  ;;                (cond ((= num 0)
-  ;;                       (prog1 (first args)
-  ;;                         (setf args (rest args))))
-  ;;                      ((= num 1)
-  ;;                       (prog1 (second args)
-  ;;                         (setf args (nthcdr 2 args))))
-  ;;                      ((> num 1)
-  ;;                       (prog1 (subseq args 1 (1+ num))
-  ;;                         (setf args (nthcdr (1+ num) args))))
-  ;;                      (t (error "cannot take ~A (< 0) args" num))))
-  ;;              (%try-parse-kw ()
-  ;;                (awhen (%find)
-  ;;                  (setf (gethash (%keyword it) keywords-ht)
-  ;;                        (%take-next-args (%num-to-take it)))
-  ;;                  t)))
-  ;;       (dotimes (i (length keywords))
-  ;;         (unless (%try-parse-kw)
-  ;;           (return)))
-  ;;       (append
-  ;;        (loop
-  ;;           :for kw :in keywords
-  ;;           :collect
-  ;;             (multiple-value-bind (val found?)
-  ;;                 (gethash (%keyword kw) keywords-ht)
-  ;;               (if found? val (%default-value kw))))
-  ;;        (list args)))))
 
   (defun translate-pair (ch1 ch2 fmt-chars)
     (cond ((char= ch1 #\~)
@@ -246,13 +204,17 @@
 
 (defmacro fmt (&rest args)
   "SYNOPSIS
-      (fmt [ :s stream ] [ :nl ] fmt-string fmt-args)
+      (fmt [ :s stream ] [ :nl ] fmt-string fmt-arg*)
 DESCRIPTION
+      Same as format but with different syntax.
+
       `fmt-string' is the same as control-string in format,
-      but with ~ (tilde) and : (colon) swapped.
+      but with colon (:) as the character
+      to introduce the directive instead of tilde (~).
+
       You can omit stream argument - t is default.
-      `:nl' adds newline in the end (same as :% would).
-      Does the same as format - prints to stream."
+
+      `:nl' adds newline in the end (same as :% would)."
   (destructuring-bind (stream newline fmt-string/args)
       (parse-initial-keywords args :keyword-definitions '((:s 1 t) :nl))
     (fmt-aux (first fmt-string/args) (rest fmt-string/args)
@@ -261,16 +223,24 @@ DESCRIPTION
 (defmacro fmt4l (&rest args)
   "SYNOPSIS
        (fmt4l [ :s stream ] [ :nl ] [ [ :d | :d+ ] delimiter ]
-              fmt-string fmt-args)
+              fmt-string fmt-arg*)
 DESCRIPTION
-       `fmt-string' is the same as control-string in format,
-       but with ~ (tilde) and : (colon) swapped.
-       Applies `fmt-string' to each arg in fmt-args.
-       To put it simply, multiplies `fmt-string' by the number of arguments.
-       `:nl' adds newline to the end.
-       `:d' allows to set a delimiter to insert between elements.
-       `:d+' does the same and also ends delimiter to the end.
-       Delimiter is also translated (~ -> :)."
+      Allows to apply one `fmt-string' to each argument of `fmt-arg*'.
+
+      `fmt-string' is the same as control-string in format,
+      but with colon (:) as the character
+      to introduce the directive instead of tilde (~).
+
+      You can omit stream argument - t is default.
+
+      `:nl' adds newline to the end.
+
+      `:d' allows to set a delimiter to insert between elements.
+
+      `:d+' does the same as `:d' and also adds delimiter to the end.
+
+       Delimiter is also translated (same as `fmt-string')
+       so you can specify ':%' as a delimiter to delimit with newline."
   (destructuring-bind (stream newline delimiter delimiter+ fmt-string/args)
       (parse-initial-keywords
        args
@@ -282,14 +252,22 @@ DESCRIPTION
 (defmacro fmts (&rest args)
   "SYNOPSIS
       (fmts [ :s stream ] [ [ :d | :d+] delimiter ]
-            (fmt-string fmt-args) ...)
+            (fmt-string fmt-arg*)+)
 DESCRIPTION
+      Allows to have multiple fmt calls in one form.
+
       `fmt-string' is the same as control-string in format,
-      but with ~ (tilde) and : (colon) swapped.
-      `fmts' is like `fmt' but you can specify several in one form.
-      Default `stream' is t.
+      but with colon (:) as the character
+      to introduce the directive instead of tilde (~).
+
+      You can omit stream argument - t is default.
+
       `:d' allows to set a delimiter to insert between fmts.
-       `:d+' does the same and also ends delimiter to the end."
+
+      `:d+' does the same and also ends delimiter to the end.
+
+      Delimiter is also translated (same as `fmt-string')
+      so you can specify ':%' as a delimiter to delimit with newline."
   (destructuring-bind (stream delimiter delimiter+ fmt-lists)
       (parse-initial-keywords
        args
@@ -299,10 +277,10 @@ DESCRIPTION
 
 (defmacro format+ (&rest args)
   "SYNOPSIS
-      (format+ [ :s stream ] [ :nl ] format-string format-args)
+      (format+ [ :s stream ] [ :nl ] control-string format-arg*)
 DESCRIPTION
       You can omit stream argument - t is default.
-      `:nl' adds newline in the end (same as :% would)."
+      `:nl' adds newline in the end (same as ~% would)."
   (destructuring-bind (stream newline format-string/args)
       (parse-initial-keywords
        args
@@ -313,13 +291,20 @@ DESCRIPTION
 (defmacro format4l (&rest args)
   "SYNOPSIS
        (format4l [ :s stream ] [ :nl ] [ [ :d | :d+ ] delimiter ]
-                 format-string format-args)
+                 control-string format-arg*)
 DESCRIPTION
-       Applies `format-string' to each arg in format-args.
-       To put it simply, multiplies `format-string' by the number of arguments.
-       `:nl' adds newline.
-       `:d' allows to set a delimiter to insert between elements.
-       `:d+' does the same and also ends delimiter to the end."
+      Allows to apply one `control-string' to each argument of `format-arg*'.
+
+      You can omit stream argument - t is default.
+
+      `:nl' adds newline to the end.
+
+      `:d' allows to set a delimiter to insert between elements.
+
+      `:d+' does the same as `:d' and also adds delimiter to the end.
+
+       Delimiter can also have format directives inside
+       that do not require arguments such as ~%."
   (destructuring-bind (stream newline delimiter delimiter+ format-string/args)
       (parse-initial-keywords
        args
@@ -331,12 +316,15 @@ DESCRIPTION
 (defmacro formats (&rest args)
   "SYNOPSIS
       (formats [ :s stream ] [ [ :d | :d+] delimiter ]
-               (format-string format-args) ...)
+               (format-string format-arg*)+)
 DESCRIPTION
-      Like `fmt' but you can specify several in one form.
-      Default `stream' is t.
-      `:d' allows to set a delimiter to insert between format statements.
-       `:d+' does the same and also ends delimiter to the end."
+      Allows to have multiple format calls in one form.
+
+      You can omit stream argument - t is default.
+
+      `:d' allows to set a delimiter to insert between fmts.
+
+      `:d+' does the same and also ends delimiter to the end."
   (destructuring-bind (stream delimiter delimiter+ format-lists)
       (parse-initial-keywords
        args
@@ -346,22 +334,27 @@ DESCRIPTION
 
 (defmacro echo (&rest args)
   "SYNOPSIS
-      (echo [ :-nl ] args)
+      (echo [ :-nl ] arg*)
 DESCRIPTION
       Prints args with ~S formatting.
       You can pass `:-nl' as the first argument to avoid newline."
-  (if (eq (first args) :-nl)
-      `(fmt4l :d " " ":S" ,@(rest args))
-      `(fmt4l :nl :d " " ":S" ,@args)))
+  (if args
+      (if (eq (first args) :-nl)
+          `(fmt4l :d+ " " ":S" ,@(rest args))
+          `(fmt4l :nl :d " " ":S" ,@args))
+      `(format t "~%")))
 
 (defmacro brk (&rest args)
   "SYNOPSIS
       (brk fmt-string fmt-args)
 DESCRIPTION
+      Same as break, but with different syntax.
+
       `fmt-string' is the same as control-string in format,
-      but with ~ (tilde) and : (colon) swapped.
-      `:nl' adds newline in the end (same as :% would).
-      Does the same as break."
+      but with colon (:) as the character
+      to introduce the directive instead of tilde (~).
+
+      `:nl' adds newline in the end (same as :% would)."
   (fmt-aux (first args) (rest args) :target :break :translate? t))
 
 (defmacro brk4l (&rest args)
@@ -369,14 +362,18 @@ DESCRIPTION
        (brk4l [ :s stream ] [ [ :d | :d+ ] delimiter ]
               fmt-string fmt-args)
 DESCRIPTION
-       `fmt-string' is the same as control-string in format,
-       but with ~ (tilde) and : (colon) swapped.
-       Applies `fmt-string' to each arg in fmt-args.
-       To put it simply, multiplies `fmt-string' by the number of arguments.
-       `:d' allows to set a delimiter to insert between elements.
-       `:d+' does the same and also ends delimiter to the end.
-       Delimiter is also translated (~ -> :).
-       Does the same as break."
+      Allows to apply one `fmt-string' to each argument of `fmt-args'.
+
+      `fmt-string' is the same as control-string in format,
+      but with colon (:) as the character
+      to introduce the directive instead of tilde (~).
+
+      `:d' allows to set a delimiter to insert between elements.
+
+      `:d+' does the same and also ends delimiter to the end.
+
+      Delimiter is also translated (same as `fmt-string')
+      so you can specify ':%' as a delimiter to delimit with newline."
   (destructuring-bind (stream delimiter delimiter+ fmt-string/args)
       (parse-initial-keywords
        args
@@ -389,5 +386,5 @@ DESCRIPTION
   "SYNOPSIS
       (brecho args)
 DESCRIPTION
-      Formats args with ~S formatting."
+      Same as break but all args are formatted with ~S directive."
   `(brk4l :d " " ":S" ,@args))
