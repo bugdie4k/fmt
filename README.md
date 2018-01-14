@@ -286,4 +286,50 @@ keywords are there in the body.
 
 ### `dbp` keywords
 
-TODO
+#### Section designators
+
+There are two sections you can define: *prefix* and *message*.
+Keywords for these are:
+
+- `p>` - prefix
+  USAGE: `p> arg*`
+- `m>` - message
+  USAGE: `m> arg*`
+
+Note that there can be several `p>` and `m>` in one `dbp` call in random order.
+See [example](example#dbp6)
+
+#### Markup
+
+There are several "markup" keywords that define the looks of a message.
+
+- `d` - delimiter  
+  USAGE: `d pattern`
+  
+  Creates a horizontal rule composed of pattern.
+  Pattern can be symbol, string, keyword symbol or anything else. 
+  The pattern goes thru `(format nil "~A" pattern)`.
+  
+  - **NOTE:** there is a special syntax for `d`.
+    All keyword symbols that start with d also create horizontal rule.
+    That is `:d--` and `d --` are equal.
+  
+- `nl` - newline    
+  Plainly translated to "~%".
+  
+- `cnl` - conditional newline
+  Plainly translated to "~&".
+  
+- `l` - literally
+  USAGE: `l arg`
+  
+  Used to "backslash" keywords and print them literally.
+  To output a contants of an `l` symbol, you also have to "backslash" it.
+
+#### Returns
+
+#### Options
+
+
+
+

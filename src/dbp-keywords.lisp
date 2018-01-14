@@ -36,7 +36,7 @@
 
   (defun kw/delimiter (lexem-next-args)
     (list (make-instance 'delim-token
-                         :pattern (write-to-string
+                         :pattern (format nil "~A"
                                    (first lexem-next-args)))
           (rest lexem-next-args)))
 
