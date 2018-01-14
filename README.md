@@ -8,12 +8,12 @@ See [examples](examples) or [tests](test/test.lisp).
 
 - [Motivation](#motivation)
 - [Overview](#overview)
-- [Documentation](#documentation)
-  - [`fmt` and friends](#fmt-and-friends)
+- [Documentation](#documentation)  
   - [`dbp` (and `dbp-reset-counter`)](#dbp-and-dbp-reset-counter)
     - [`dbp` message structure](#dbp-message-structure)
     - [`dbp` returns](#dbp-returns)
     - [`dbp` keywords](#dbp-keywords)
+  - [`fmt` and friends](#fmt-and-friends)
 
 # Motivation
 
@@ -92,6 +92,202 @@ The [`dbp`](#dbp-and-dbp-reset-counter) has the `d` keyword
 that can be used to create horizontal rule delimiters.
 
 # Documentation
+
+## `dbp` (and `dbp-reset-counter`)
+#### ([examples](examples#dbp1))
+
+`dbp` accepts arguments that will be used to construct the log message.
+There are *keywords* that have some special effect on debug message.
+If argument is not a *keyword*, it is printed as with `~S` formatting 
+(it can be altered with the `?fletter` option).
+
+### `dbp` message structure
+
+This call
+``` common-lisp
+(fmt:dbp :p> :prefix-> :m> 1 d-= 2 r= 10 r= "20")
+```
+produces the following output (except my comment on the message structure, of course)
+```
+┌ 5   :PREFIX-> 1
+│ 5   :PREFIX-> -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+└ 5   :PREFIX-> 2
+| \_/ \_______/ \__________________________________________________________/
+|  |      |                               \
+|  |       \                               "--> MESSAGE
+|   \       "---------------------------------> PREFIX
+ \   "----------------------------------------> COUNTER
+  "-------------------------------------------> CLIP
+```
+
+- **MESSAGE**  
+  The message is entered after the `m>` keyword.
+  Or if no *section designating* (that is `p>` or `m>`) keywords were entered.
+ 
+- **PREFIX**  
+  The prefix is entered after the `p>` keyword and is inserted after each newline
+  in message along with COUNTER and CLIP.
+
+- **COUNTER**  
+  The counter is the unique number of a log message. 
+  After each `dbp` call the internal counter increments. 
+  It can be reset with the `dbp-reset-counter` function or with the `?rsc` keyword.
+  Remove it with the `?no-counter` keyword.
+
+- **CLIP**  
+  The clip (maybe not the best name for a thing?) is intended to help to distinguish
+  a separate multiline message among the other outputted text.
+  Remove it with the `?no-clip` keyword.
+  
+### `dbp` returns
+
+`dbp` can return things from it's body using keywords `r=` and `pr=`.
+`r=` returns the following form from `dbp` call and does not print it.
+`pr=` both returns and prints.
+See [examples dbp.2 and dbp.3](examples#dbp2).
+
+If there are multiple `r=` and `pr=` keywords `dbp` returns several values
+in order from right to left. 
+Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returns
+the string with created message as the first value no matter what `r=` and `pr=`
+keywords are there in the body.
+
+### `dbp` keywords
+
+#### Section designators
+
+There are two sections you can define: *prefix* and *message*.
+Keywords for these are:
+
+- `p>` - prefix  
+
+  USAGE: `p> arg*`
+  
+- `m>` - message  
+
+  USAGE: `m> arg*`
+
+Note that there can be several `p>` and `m>` in one `dbp` call in random order.
+See this [example](example#dbp6).
+
+#### Markup
+
+There are several "markup" keywords that define the looks of a message.
+
+- `d` - delimiter  
+
+  USAGE: `d pattern`
+  
+  Creates a horizontal rule composed of `pattern`
+  which can be a symbol, a string, a keyword symbol or anything else
+  because `pattern` goes through `princ-to-string`.
+  
+  - **NOTE:** there is a special syntax for `d`.
+    All keyword symbols that start with d also create horizontal rule.
+    That is `:d--` and `d --` are equal.
+  
+- `nl` - newline  
+
+  Plainly translated to "~%".
+  
+- `cnl` - conditional newline  
+
+  Plainly translated to "~&".
+  
+- `l` - literally  
+
+  USAGE: `l arg`
+  
+  Used to "backslash" keywords and print them literally.
+  To output contents of an `l` symbol, you also have to "backslash" it.
+
+#### Returns
+
+- `r=` - return  
+
+  USAGE: `r= arg`
+  
+  Adds `arg` to returned values.
+  
+- `pr=` - print return  
+
+  USAGE: `pr= arg`
+  
+  Adds `arg` to returned values and prints it.  
+
+#### Options
+
+- `?wd` - word delimiter
+
+    USAGE: `?wd arg`
+    
+    The arg goes through `princ-to-string` and becomes word delimiter.
+    
+    Default is space.
+    
+- `?fletter` - format letter
+
+    USAGE: `?fletter arg`
+    
+    The arg goes through `princ-to-string` and becomes new
+    format letter instead of `S`. Do not use tilde (`~`) when 
+    entering format letter in `arg` - it is implied and added automatically.
+    
+    Default is `S`.
+    
+- `?s` - stream 
+
+    USAGE: `?s stream`
+    
+    Stream can also be `t` or `nil`.
+    `t` means printing to `*standard-output*`.
+    `nil` means that string with message will be returned as the first argument
+    from `dbp` call.
+    
+    Default is `t`.
+    
+- `?dw` - delimiter width
+
+    USAGE: `?dw num`
+    
+    Sets the length of delimiters printed by `d` keyword.
+    
+    Default is 60.
+    
+- `?counter-w` - counter width
+
+    USAGE: `?counter-w num`
+    
+    Default is 3.
+    
+- `?prefix-w` - counter width
+
+    USAGE: `?prefix-w num`
+    
+    Default is83.
+    
+- `?cut-counter`
+
+    If met cuts counter upto counter width.    
+
+- `?cut-prefix`
+
+    If met cuts prefix upto prefix width.    
+    
+- `?break` - break
+  
+  If meats `?break` keyword ignores stream set with `?s`
+  and breaks with constructed message.
+  
+- `?rsc` - reset counter
+  
+  You can also use `dbp-reset-counter` for this.
+
+- `?no-end-newline`
+
+- `?no-counter`
+
+- `no-clip`
 
 ## `fmt` and friends
 
@@ -224,195 +420,3 @@ Same as break, but with different syntax.
 `echo`'s breaking counterpart.
 
 <hr/>
-
-## `dbp` (and `dbp-reset-counter`)
-#### ([examples](examples#dbp1))
-
-`dbp` accepts arguments that will be used to construct the log message.
-There are *keywords* that have some special effect on debug message.
-If argument is not a *keyword*, it is printed as with `~S` formatting 
-(it can be altered with the `?fletter` option).
-
-### `dbp` message structure
-
-This call
-``` common-lisp
-(fmt:dbp :p> :prefix-> :m> 1 d-= 2 r= 10 r= "20")
-```
-produces the following output (except my comment on the message structure, of course)
-```
-┌ 5   :PREFIX-> 1
-│ 5   :PREFIX-> -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-└ 5   :PREFIX-> 2
-| \_/ \_______/ \__________________________________________________________/
-|  |      |                               \
-|  |       \                               "--> MESSAGE
-|   \       "---------------------------------> PREFIX
- \   "----------------------------------------> COUNTER
-  "-------------------------------------------> CLIP
-```
-
-- **MESSAGE**  
-  The message is entered after the `m>` keyword.
-  Or if no *section designating* (that is `p>` or `m>`) keywords were entered.
- 
-- **PREFIX**  
-  The prefix is entered after the `p>` keyword and is inserted after each newline
-  in message along with COUNTER and CLIP.
-
-- **COUNTER**  
-  The counter is the unique number of a log message. 
-  After each `dbp` call the internal counter increments. 
-  It can be reset with the `dbp-reset-counter` function or with the `?rsc` keyword.
-  Remove it with the `?no-counter` keyword.
-
-- **CLIP**  
-  The clip (maybe not the best name for a thing?) is intended to help to distinguish
-  a separate multiline message among the other outputted text.
-  Remove it with the `?no-clip` keyword.
-  
-### `dbp` returns
-
-`dbp` can return things from it's body using keywords `r=` and `pr=`.
-`r=` returns the following form from `dbp` call and does not print it.
-`pr=` both returns and prints.
-See [examples dbp.2 and dbp.3](examples#dbp2).
-
-If there are multiple `r=` and `pr=` keywords `dbp` returns several values
-in order from right to left. 
-Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returns
-the string with created message as the first value no matter what `r=` and `pr=`
-keywords are there in the body.
-
-### `dbp` keywords
-
-#### Section designators
-
-There are two sections you can define: *prefix* and *message*.
-Keywords for these are:
-
-- `p>` - prefix  
-
-  USAGE: `p> arg*`
-  
-- `m>` - message  
-
-  USAGE: `m> arg*`
-
-Note that there can be several `p>` and `m>` in one `dbp` call in random order.
-See this [example](example#dbp6).
-
-#### Markup
-
-There are several "markup" keywords that define the looks of a message.
-
-- `d` - delimiter  
-
-  USAGE: `d pattern`
-  
-  Creates a horizontal rule composed of pattern.
-  Pattern can be symbol, string, keyword symbol or anything else. 
-  The pattern goes through `princ-to-string`.
-  
-  - **NOTE:** there is a special syntax for `d`.
-    All keyword symbols that start with d also create horizontal rule.
-    That is `:d--` and `d --` are equal.
-  
-- `nl` - newline  
-  Plainly translated to "~%".
-  
-- `cnl` - conditional newline  
-  Plainly translated to "~&".
-  
-- `l` - literally  
-
-  USAGE: `l arg`
-  
-  Used to "backslash" keywords and print them literally.
-  To output a contants of an `l` symbol, you also have to "backslash" it.
-
-#### Returns
-
-- `r=` - return  
-
-  USAGE: `r= arg`
-  
-  Adds `arg` to returned values.
-  
-- `pr=` - print return  
-
-  USAGE: `pr= arg`
-  
-  Adds `arg` to returned values and prints it.  
-
-#### Options
-
-- `?wd` - word delimiter
-
-    USAGE: `?wd arg`
-    
-    The arg goes through `princ-to-string` and becomes word delimiter.
-    
-    Default is space.
-    
-- `?fletter` - format letter
-
-    USAGE: `?fletter arg`
-    
-    The arg goes through `princ-to-string` and becomes new
-    format letter instead of `S`. Do not use tilde (`~`) when 
-    entering format letter in arg - it is implied and added automatically.
-    
-    Default is `S`.
-    
-- `?s` - stream 
-
-    USAGE: `?s stream`
-    
-    Stream can also be `t` or `nil`.
-    `t` means printing to `*standard-output*`.
-    `nil` means that string with message will be returned as the first argument
-    from `dbp` call.
-    
-    Default is `t`.
-    
-- `?dw` - delimiter width
-
-    USAGE: `?dw num`
-    
-    Sets the length of delimiters printed by `d` keyword.
-    
-    Default is 60.
-    
-- `?counter-w` - counter width
-
-    USAGE: `?counter-w num`
-    
-    Default is 3.
-    
-- `?prefix-w` - counter width
-
-    USAGE: `?prefix-w num`
-    
-    Default is83.
-    
-- `?cut-counter`
-
-    If met cuts counter upto counter width.    
-
-- `?cut-prefix`
-
-    If met cuts prefix upto prefix width.    
-    
-- `?break` - break
-  
-  If meats `?break` keyword ignores stream set with `?s`
-  and breaks with constructed message.
-  
-- `?rsc` - reset counter
-
-- `?no-end-newline`
-
-- `?no-counter`
-
-- `no-clip`
