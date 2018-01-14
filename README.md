@@ -34,9 +34,8 @@ And there were several things that bothered me about the process.
  
  I didn't like that to print a clear
  delimiter for pieces of debug information everytime I had
- to do something like  
- `(format t "~%------------------~%")`, then `(format t "~%==================~%")`,  
- then `(format t "~%=!=!=!=!=!=!=!=!=!~%")`, and so on. 
+ to do something like `(format t "~%------~%")`,  
+ then `(format t "~%======~%")`, then `(format t "~%=!=!=!~%")`, and so on. 
  
 So I've written this in an attempt to address these issues.  
 
@@ -59,27 +58,34 @@ But I always wanted to clean up the messy version of this lib, so here it is.
 
 - **The tilde issue.**
 
-The solution to the tilde issue can be found in `fmt.lisp` file taking various forms.  
-The `fmt` function has control-string that is just the same as 
+The solution to the tilde issue can be found in `fmt.lisp` 
+file taking various forms.  
+The [`fmt`](#fmt-and-friends)
+function has control-string that is just the same as 
 control-string of a format, but colon (`:`) is used to specify format directives
 instead of tilde (`~`). 
 
 This means that all the format directives of CL's `format`
 are now intoduced by colon. `~A` becomes `:A`, `~%` becomes `:%`, etc.
-Also if you want to print a tilde, you just type a tilde, but if you wand to print
-colon, you have to "backslash" colon by colon. Also stream argument is optional as
-usually format (and hence fmt) is used to write to `*standard-output*`.
+Also if you want to print a tilde, you just type a tilde, 
+but if you wand to print
+colon, you have to "backslash" colon by colon (`::`). 
+Also stream argument is optional as usually format (and hence fmt) 
+is used to write to `*standard-output*`.
 
 - **The placing issue.**
 
-In the `dbp` macro one can specify a string which would prefix all the lines in a debug
-message. Given the content of the prefix is a unique string (unique among other prefixes), 
-it binds the log message to the place of a debug print in code and makes it easy to find
+The solution is [`dbp`](#dbp-and-dbp-reset-counter) macro - stands for
+debug print. In the `dbp` macro one can specify a
+string which would prefix all the lines in a debug message. 
+Given the content of the prefix
+is a unique string (unique among other prefixes), it binds the log
+message to the place of a debug print in code and makes it easy to find
 and remove on need.
 
 - **The delimiter issue.**
 
-The solution is `dbp` macro - stands for debug print. It has the `d` keyword
+The [`dbp`](#dbp-and-dbp-reset-counter) has the `d` keyword
 that can be used to create horizontal rule delimiters.
 
 # Documentation
@@ -217,6 +223,24 @@ Same as break, but with different syntax.
 <hr/>
 
 ## `dbp` (and `dbp-reset-counter`)
-### ([examples](https://github.com/bugdie4k/fmt/tree/master/examples#dbp1))
+### ([examples](examples#dbp1))
 
-TODO
+`dbp` accepts arguments that will be used to construct the log message.
+There are *keywords* that have some special effect on debug message.
+If argument is not a *keyword*, it is printed as with `~S` formatting 
+(it can be altered with the `?fletter` option).
+
+## TODO: structure of dbp message
+
+`dbp` can return things from it's body using keywords `r=` and `pr=`.
+`r=` returns the folowing form from `dbp` call and does not print it.
+`pr=` both returns and prints.
+See examples [dbp.2 and dbp.3](examples#dbp2).
+
+If there are multiple `r=` and `pr=` keywords `dbp` returns several values
+in order from right to left. 
+Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returns
+the string with created message as the first value no matter what `r=` and `pr=`
+keywords are there in the body.
+
+
