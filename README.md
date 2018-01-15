@@ -145,7 +145,7 @@ produces the following output (except my comment on the message structure, of co
   
 ### `dbp` returns
 
-`dbp` can return things from it's body using keywords `r=` and `pr=`.
+`dbp` can return things from it's body using keywords `r=` and `pr=`.  
 `r=` returns the following form and does not print it.
 `pr=` both returns and prints.
 See [examples dbp.2 and dbp.3](examples#dbp2).
