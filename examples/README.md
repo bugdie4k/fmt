@@ -1,6 +1,6 @@
 **NOTE:** True for SBCL on Linux
 
-## dbp.1 ([documentation](/#dbp-and-dbp-reset-counter))
+## dbp.1 ([documentation](#dbp-and-dbp-reset-counter))
 
 FORM:
 ``` common-lisp
