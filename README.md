@@ -168,11 +168,11 @@ Keywords for these are:
 
 - `p>` - prefix  
 
-  USAGE: `p> arg*`
+  *USAGE:* `p> arg*`
   
 - `m>` - message  
 
-  USAGE: `m> arg*`
+  *USAGE:* `m> arg*`
 
 Note that there can be several `p>` and `m>` in one `dbp` call in random order.
 See this [example](example#dbp6).
@@ -183,7 +183,7 @@ There are several "markup" keywords that can change looks of a message.
 
 - `d` - delimiter  
 
-  USAGE: `d pattern`
+  *USAGE:* `d pattern`
   
   Creates a horizontal rule composed of `pattern`
   which can be a symbol, a string, a keyword symbol or anything else
@@ -203,7 +203,7 @@ There are several "markup" keywords that can change looks of a message.
   
 - `l` - literally  
 
-  USAGE: `l arg`
+  *USAGE:* `l arg`
   
   Used to "backslash" keywords and print them literally.
   To output contents of an `l` symbol, you also have to "backslash" it.
@@ -212,13 +212,13 @@ There are several "markup" keywords that can change looks of a message.
 
 - `r=` - return  
 
-  USAGE: `r= arg`
+  *USAGE:* `r= arg`
   
   Adds `arg` to returned values.
   
 - `pr=` - print return  
 
-  USAGE: `pr= arg`
+  *USAGE:* `pr= arg`
   
   Adds `arg` to returned values and also lets `dbp` print it.  
 
@@ -226,7 +226,7 @@ There are several "markup" keywords that can change looks of a message.
 
 - `?wd` - word delimiter
 
-    USAGE: `?wd arg`
+    *USAGE:* `?wd arg`
     
     The arg goes through `princ-to-string` and becomes word delimiter.
     
@@ -234,7 +234,7 @@ There are several "markup" keywords that can change looks of a message.
     
 - `?fletter` - format letter
 
-    USAGE: `?fletter arg`
+    *USAGE:* `?fletter arg`
     
     The arg goes through `princ-to-string` and becomes new
     format letter instead of `S`. Do not use tilde (`~`) when 
@@ -244,7 +244,7 @@ There are several "markup" keywords that can change looks of a message.
     
 - `?s` - stream 
 
-    USAGE: `?s stream`
+    *USAGE:* `?s stream`
     
     Stream can also be `t` or `nil`.
     `t` means printing to `*standard-output*`.
@@ -255,7 +255,7 @@ There are several "markup" keywords that can change looks of a message.
     
 - `?dw` - delimiter width
 
-    USAGE: `?dw num`
+    *USAGE:* `?dw num`
     
     Sets the length of delimiters printed by `d` keyword.
     
@@ -263,13 +263,13 @@ There are several "markup" keywords that can change looks of a message.
     
 - `?counter-w` - counter width
 
-    USAGE: `?counter-w num`
+    *USAGE:* `?counter-w num`
     
     Default is 3.
     
 - `?prefix-w` - counter width
 
-    USAGE: `?prefix-w num`
+    *USAGE:* `?prefix-w num`
     
     Default is 83.
     
