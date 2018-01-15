@@ -8,10 +8,10 @@
        :do (awhen (funcall (first v) (second v) lexem lexem-next-args)
              (return it))))
 
-  ;; NOTE: special syntax for d here  
-  (defun special-syntax-symbol? (sym-name args)    
+  ;; NOTE: special syntax for d here
+  (defun special-syntax-symbol? (sym-name args)
     (when (and (keywordp (first args))
-               (> (length sym-name) 1)                
+               (> (length sym-name) 1)
                (string-equal (subseq sym-name 0 1) "d"))
       (list (make-instance 'delim-token
                            :pattern (subseq sym-name 1))

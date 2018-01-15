@@ -98,7 +98,7 @@ that can be used to create horizontal rule delimiters.
 ## `dbp` (and `dbp-reset-counter`)
 #### ([examples](examples#dbp1))
 
-`dbp` accepts arguments that will be used to construct the log message.
+`dbp` accepts arguments that will be used to construct a log message.
 There are *keywords* that have some special effect on debug message.
 If argument is not a *keyword*, it is printed as with `~S` formatting 
 (it can be altered with the `?fletter` option).
@@ -115,11 +115,11 @@ produces the following output (except my comment on the message structure, of co
 │ 5   :PREFIX-> -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 └ 5   :PREFIX-> 2
 | \_/ \_______/ \__________________________________________________________/
-|  |      |                               \
-|  |       \                               "--> MESSAGE
-|   \       "---------------------------------> PREFIX
- \   "----------------------------------------> COUNTER
-  "-------------------------------------------> CLIP
+|  |      |                               /
+|  |       \           MESSAGE <---------" 
+|   \       "--------> PREFIX
+ \   "---------------> COUNTER
+  "------------------> CLIP
 ```
 
 - **MESSAGE**  
@@ -146,7 +146,7 @@ produces the following output (except my comment on the message structure, of co
 ### `dbp` returns
 
 `dbp` can return things from it's body using keywords `r=` and `pr=`.
-`r=` returns the following form from `dbp` call and does not print it.
+`r=` returns the following form and does not print it.
 `pr=` both returns and prints.
 See [examples dbp.2 and dbp.3](examples#dbp2).
 
@@ -158,8 +158,8 @@ returns go after.
 
 ### `dbp` keywords
 
-Keywords are symbols. Either keyword symbols or normal.
-They are determined by `symbol-name`.
+Keywords are symbols. Either keyword symbols or normal symbols.
+`symbol-name` of a symbol is used to determite whether it is a keyword or not.
 
 #### Section designators
 
