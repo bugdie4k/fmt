@@ -26,8 +26,7 @@ NIL
 ```
 
 ## dbp.2
-
-
+#### ([documentation](README.md#dbp-and-dbp-reset-counter))
 FORM
 ``` common-lisp
 (fmt:dbp :?s s :m> "ONELINER. RETURNS THE RESULT OF A FORM AFTER THE :r= KEYWORD" :r= (* 3 (+ 1 2)))
@@ -44,7 +43,7 @@ RETURNS:
 ```
 
 ## dbp.3
-
+#### ([documentation](README.md#dbp-and-dbp-reset-counter))
 FORM
 ```common-lisp
 (let ((i 1))
@@ -73,7 +72,7 @@ RETURNS:
 ```
 
 ## dbp.4
-
+#### ([documentation](README.md#dbp-and-dbp-reset-counter))
 FORM
 ``` common-lisp
 (fmt:dbp "BACKSLASHING KEYWORDS WITH :l -->" :l :p> :l :m> :l :?no-end-newline :l :r= 123 :l :l)
@@ -90,7 +89,7 @@ NIL
 ```
 
 ## dbp.5
-
+#### ([documentation](README.md#dbp-and-dbp-reset-counter))
 FORM
 ``` common-lisp
 (progn
@@ -125,7 +124,7 @@ NIL
 ```
 
 ## dbp.6
-
+#### ([documentation](README.md#dbp-and-dbp-reset-counter))
 FORM
 ``` common-lisp
 (fmt:dbp ?rsc ?dw 10
@@ -154,7 +153,7 @@ RETURNS:
 
 
 ## fmt.1
-
+#### ([documentation](README.md#fmt))
 FORM
 ``` common-lisp
 (fmt:fmt ":A :: ~ :: :S" "str" "str")
@@ -166,7 +165,7 @@ str : ~ : "str"
 ```
 
 ## fmt.2
-
+#### ([documentation](README.md#fmt))
 FORM
 ``` common-lisp
 (fmt:fmt :s s ":@{:A:^,:}" 1 2 3 4))
@@ -178,7 +177,7 @@ PRINTS TO `s` STREAM:
 ```
 
 ## fmt.3
-
+#### ([documentation](README.md#fmt))
 FORM
 ``` common-lisp
 (fmt:fmt :s nil "=>:4A=>:4@A" :ABC :DEF)
@@ -190,7 +189,7 @@ RETURNS:
 ```
 
 ## fmt4l.1
-
+#### ([documentation](README.md#fmt4l))
 FORM
 ``` common-lisp
 (fmt:fmt4l ":A--" 1 2 3 4)
@@ -202,7 +201,7 @@ PRINTS TO `*STANDARD-OUTPUT*`:
 ```
 
 ## fmt4l.2
-
+#### ([documentation](README.md#fmt4l))
 FORM
 ``` common-lisp
 (fmt:fmt4l :d "==" ":A" 1 2 3 4)
@@ -214,7 +213,7 @@ PRINTS TO `*STANDARD-OUTPUT*`:
 ```
 
 ## fmt4l.3
-
+#### ([documentation](README.md#fmt4l))
 FORM
 ``` common-lisp
 (fmt:fmt4l :d+ "==" ":A" 1 2 3 4)
@@ -226,7 +225,7 @@ PRINTS TO `*STANDARD-OUTPUT*`:
 ```
 
 ## fmts.1
-
+#### ([documentation](README.md#fmts))
 FORM
 ``` common-lisp
 (fmt:fmts (":A " "string1")
@@ -239,7 +238,7 @@ string1 "string2"
 ```
 
 ## fmts.2
-
+#### ([documentation](README.md#fmts))
 FORM
 ``` common-lisp
 (fmt:fmts :d ":%<br>:%"
@@ -255,7 +254,7 @@ string1
 ```
 
 ## echo.1
-
+#### ([documentation](README.md#echo))
 FORM
 ``` common-lisp
 (fmt:echo 1 2 "DON'T CARE, PRINT" :anything (list (+ 41 1) (make-instance 'class)))
@@ -267,7 +266,7 @@ PRINTS TO `*STANDARD-OUTPUT*`:
 ```
 
 ## echo.2
-
+#### ([documentation](README.md#echo))
 FORM
 ``` common-lisp
 (progn 

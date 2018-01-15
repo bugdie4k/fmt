@@ -298,7 +298,8 @@ There are several "markup" keywords that can change looks of a message.
 
 ## `fmt` and friends
 
-### fmt ([examples](examples#fmt1))
+### fmt 
+#### ([examples](examples#fmt1))
 
 **SYNOPSIS**  
 `(fmt [ :s stream ] [ :nl ] fmt-string fmt-args*)`
@@ -316,7 +317,8 @@ You can omit stream argument - `t` is default.
       
 <hr/>
 
-### fmt4l ([examples](examples#fmt4l1))
+### fmt4l
+#### ([examples](examples#fmt4l1))
 
 **SYNOPSIS**  
 `(fmt4l [ :s stream ] [ :nl ] 
@@ -336,7 +338,8 @@ so you can specify `:%` as a delimiter to delimit with newline.
 
 <hr/>
 
-### fmts ([examples](examples#fmts1))
+### fmts
+#### ([examples](examples#fmts1))
 
 **SYNOPSIS**  
 `(fmts [ :s stream ] [ [ :d | :d+] delimiter ]
@@ -350,7 +353,8 @@ are the same as in `fmt`.
 
 <hr/>
 
-### echo ([examples](examples#echo1))
+### echo
+#### ([examples](examples#echo1))
 
 **SYNOPSIS**  
 `(echo [ :-nl ] arg*)`
