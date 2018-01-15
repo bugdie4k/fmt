@@ -2,7 +2,7 @@
 
 # tl;dr
 
-See [examples](examples) or [tests](test/test.lisp).
+See [examples](EXAMPLES.md) or [tests](test/test.lisp).
 
 # Contents
 
@@ -96,7 +96,7 @@ that can be used to create horizontal rule delimiters.
 # Documentation
 
 ## `dbp` (and `dbp-reset-counter`)
-#### ([examples](examples#dbp1))
+#### ([examples](EXAMPLES.md#dbp1))
 
 `dbp` accepts arguments that will be used to construct a log message.
 There are *keywords* that have some special effect on debug message.
@@ -148,7 +148,7 @@ produces the following output (except my comment on the message structure, of co
 `dbp` can return things from it's body using keywords `r=` and `pr=`.  
 `r=` returns the following form and does not print it.
 `pr=` both returns and prints.
-See [examples dbp.2 and dbp.3](examples#dbp2).
+See [examples dbp.2 and dbp.3](EXAMPLES.md#dbp2).
 
 If there are multiple `r=` and `pr=` keywords `dbp` returns several values
 in order from right to left. 
