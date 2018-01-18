@@ -3,11 +3,12 @@
   :author "Danylo Fedorov <fedorough@gmail.com>"
   :homepage "https://github.com/bugdie4k/fmt"
   :version "0.0.1"
-  :depends-on (:alexandria)  
-  :components ((:module "src"
+  :depends-on (:alexandria)
+  :serial t
+  :components ((:file "package")
+               (:module "src"
                 :serial t
-                :components ((:file "package")
-                             (:file "utils")
+                :components ((:file "utils")
                              (:file "fmt")
                              (:file "dbp-tokens")
                              (:file "dbp-keywords")

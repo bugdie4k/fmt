@@ -24,7 +24,7 @@ format-control-string, format-argument"))
         (with-slots (form generated-symbol) token
           (cond ((stringp form) (%+word-delimiter form))
                 ((%stringable? form)
-                 (%+word-delimiter (write-to-string form)))
+                 (%+word-delimiter (format nil format-letter form)))
                 (t (values (%+word-delimiter format-letter)
                            (or generated-symbol
                                form)

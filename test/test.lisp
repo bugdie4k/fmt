@@ -230,7 +230,8 @@
 (defun dbp.markup.2 ()
   (let ((l :this-is-l-symbols-value))
     (dbp ?rsc :?s nil
-         :p> :-- :m> :l :opana :l :l nl d-! nl d-=+! nl d=% d$@$ l :opana l l)))
+         :p> :-- :m> :l :opana :l :l nl :d-! nl :d-=+! nl
+         :d=% :d$@$ l :opana l l)))
 
 (defparameter *dbp-expected-4*
   (format nil "~A~%"
@@ -240,7 +241,7 @@
 └ 0   ~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*~~*"))
 
 (defun dbp.markup.3 ()
-  (dbp ?rsc :?s nil d ~ d~- d ~=~ d~~*))
+  (dbp ?rsc :?s nil d ~ :d~- d ~=~ :d~~*))
 
 (defun validate.eval-sequence.1 (val-list)
   (destructuring-bind (str v0 v1 v2 v3 v4)

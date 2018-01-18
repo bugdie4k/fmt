@@ -8,7 +8,7 @@
                 #:curry
                 #:hash-table-alist)
   (:export
-   ;; fmt.lisp
+   ;; src/fmt.lisp
    #:fmt
    #:fmt4l
    #:fmts
@@ -19,6 +19,6 @@
    #:brk
    #:brk4l
    #:breacho
-   ;; dbp.lisp
+   ;; src/dbp.lisp
    #:dbp
    #:dbp-reset-counter))

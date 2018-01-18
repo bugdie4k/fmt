@@ -8,26 +8,18 @@
        :do (awhen (funcall (first v) (second v) lexem lexem-next-args)
              (return it))))
 
-  ;; NOTE: special syntax for d, r=, pr= here
-  ;; KLUDGE (???)
-  (defun special-syntax-symbol? (sym-name rest-args)
-    (cond ((and (> (length sym-name) 1)
-                (string-equal (subseq sym-name 0 1) "d"))
-           (list (make-instance 'delim-token
-                                :pattern (subseq sym-name 1))
-                 rest-args))
-          ((and (> (length sym-name) 2)
-                (string-equal (subseq sym-name 0 2) "r="))
-           (list (form->return-token (subseq sym-name 2))
-                 rest-args))
-          ((and (> (length sym-name) 3)
-                (string-equal (subseq sym-name 0 3) "pr="))
-           (list (form->return-token (subseq sym-name 3) t)
-                 rest-args))))
+  ;; NOTE: special syntax for d here
+  (defun special-syntax-symbol? (sym-name args)
+    (when (and (keywordp (first args))
+               (> (length sym-name) 1)
+               (string-equal (subseq sym-name 0 1) "d"))
+      (list (make-instance 'delim-token
+                           :pattern (subseq sym-name 1))
+            (rest args))))
 
   (defun symbol->token (args)
     (awhen (symbol-name? (first args))
-      (or (special-syntax-symbol? it (rest args))
+      (or (special-syntax-symbol? it args)
           (lexem->token it (rest args))
           (list (form->regular-token (first args))
                 (rest args)))))

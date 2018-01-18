@@ -79,7 +79,7 @@
 
 (defmacro dbp (&body body)
   "dbp is short for debug print.
-It is a macro with a small markup syntax for a better experience
+It is a macro with small markup syntax for a better experience
 of debugging with debug prints."
   (mv-let* (((prefix message eval-list returns options)
              (parser (lexer body)))
