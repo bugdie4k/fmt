@@ -31,7 +31,7 @@ And there were several things that bothered me about the process.
  
  I didn't like how easy it is to forget about where
  debug prints are placed and how I then had to grep all over the project 
- and check all the the `format` calls and pick the ones I don't need anymore. 
+ and check all the `format` calls and pick the ones I don't need anymore. 
  
  - **The delimiter issue.**
  
@@ -43,7 +43,7 @@ And there were several things that bothered me about the process.
  
 So I've written this in an attempt to address these issues.  
 
-Later I got acquainted with different cool features of
+Later I discovered different cool features of
 [SLIME](https://common-lisp.net/project/slime/) like
 inspector, evaluating in frame, macroexpansion in place, 
 evaluation in place, how `(declaim (optimize (debug 3)))`
@@ -51,7 +51,7 @@ gives you more information in debugger, etc.
 
 Also I noticed that if you write `(format t "~@{~A~^ ~}~%" arg*)` you
 can write anything in place of `arg*` one by one and it will act like an echo.
-The insertion of such a form is easily automated with any good text editor
+The insertion of such form is easily automated with any good text editor
 (Emacs + [yasnippet](https://github.com/joaotavora/yasnippet) for example) 
 and it proved to be quite handy.  
 
@@ -73,20 +73,20 @@ instead of tilde (`~`) because typing colons is easier than typing tildes.
 This means that all the format directives of CL's `format`
 are now introduced by colon. `~A` becomes `:A`, `~%` becomes `:%`, etc.
 Also if you want to print a tilde, you just type a tilde, 
-but if you wand to print
+but if you want to print
 colon, you have to "backslash" colon by colon (`::`). 
-Also stream argument is optional as usually format (and hence fmt) 
-is used to write to `*standard-output*`.
+Also stream argument is optional as `format` (and hence `fmt`) 
+is usually used to write to `*standard-output*`.
 
 - **The placing issue.**
 
 The solution is [`dbp`](#dbp-and-dbp-reset-counter) macro - stands for
 debug print. In the `dbp` macro one can specify a
 string which would prefix all the lines in a debug message. 
-Given the content of the prefix
+If the content of the prefix
 is a unique string (unique among other prefixes), it binds the log
-message to the place of a debug print in code and makes it easy to find
-and remove on need.
+message to the place of a debug print in the code and makes it easy to find
+and remove when needed.
 
 - **The delimiter issue.**
 
@@ -100,7 +100,7 @@ that can be used to create horizontal rule delimiters.
 
 `dbp` accepts arguments that will be used to construct a log message.
 There are *keywords* that have some special effect on debug message.
-If argument is not a *keyword*, it is printed as with `~S` formatting 
+If argument is not a *keyword*, it is printed as if `~S` formatted
 (it can be altered with the `?fletter` option).
 
 ### `dbp` message structure
@@ -124,15 +124,15 @@ produces the following output (except my comment on the message structure, of co
 
 - **MESSAGE**  
   The message is entered after the `m>` keyword.
-  Or if no *section designating* (that is `p>` or `m>`) keywords were entered.
+  Or if no *section-designating* (that is `p>` or `m>`) keywords were entered.
  
 - **PREFIX**  
   The prefix is entered after the `p>` keyword and is inserted after
-  each newline in message along with COUNTER and CLIP.
+  each newline in the message along with COUNTER and CLIP.
 
 - **COUNTER**  
   The counter is the unique number of a log message. 
-  After each `dbp` call the internal counter increments. 
+  The internal counter increments after each `dbp` call. 
   It can be reset with the `dbp-reset-counter` function 
   or with the `?rsc` keyword.
   Remove counter from a message with the `?no-counter` keyword.
@@ -140,7 +140,7 @@ produces the following output (except my comment on the message structure, of co
 - **CLIP**  
   The clip (maybe not the best name for a thing?) is intended to help
   to distinguish a separate multiline message among other messages and
-  outputted text.
+  output text.
   Remove clip from a message with the `?no-clip` keyword.
   
 ### `dbp` returns
@@ -151,9 +151,9 @@ produces the following output (except my comment on the message structure, of co
 See [examples dbp.2 and dbp.3](EXAMPLES.md#dbp2).
 
 If there are multiple `r=` and `pr=` keywords `dbp` returns several values
-in order from right to left. 
-Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returns
-the string with created message as the first value and all the other
+in an order from right to left. 
+Also if the stream is set to `nil` (with the `?s` keyword) then `dbp` returned 
+values the string with the created message as the first value and all the other
 returns go after.
 
 ### `dbp` keywords
@@ -174,12 +174,13 @@ Keywords for these are:
 
   *USAGE:* `m> arg*`
 
-Note that there can be several `p>` and `m>` in one `dbp` call in random order.
+Note that there can be several `p>` and `m>` in one `dbp` call in
+a random order.
 See this [example](example#dbp6).
 
 #### Markup
 
-There are several "markup" keywords that can change looks of a message.
+There are several "markup" keywords that can change the looks of a message.
 
 - `d` - delimiter  
 
@@ -191,7 +192,7 @@ There are several "markup" keywords that can change looks of a message.
   
   - **NOTE:** there is a special syntax for `d`.
     All keyword symbols that start with `d` also create horizontal rule.  
-    That is `:d--` and `d --` are equal.
+    That is `:d-=` and `d -=` are equal.
   
 - `nl` - newline  
 
@@ -205,8 +206,8 @@ There are several "markup" keywords that can change looks of a message.
 
   *USAGE:* `l arg`
   
-  Used to "backslash" keywords and print them literally.
-  To output contents of an `l` symbol, you also have to "backslash" it.
+  Is used to "backslash" keywords and print them literally.
+  To output contents of an `l` variable, you also have to "backslash" it.
 
 #### Returns
 
@@ -248,7 +249,7 @@ There are several "markup" keywords that can change looks of a message.
     
     Stream can also be `t` or `nil`.
     `t` means printing to `*standard-output*`.
-    `nil` means that string with message will be returned as the first argument
+    `nil` means that string with message will be returned as the first value
     from `dbp` call.
     
     Default is `t`.
@@ -275,15 +276,15 @@ There are several "markup" keywords that can change looks of a message.
     
 - `?cut-counter`
 
-    If met cuts counter upto counter width.    
+    If met cuts counter up to counter width.    
 
 - `?cut-prefix`
 
-    If met cuts prefix upto prefix width.    
+    If met cuts prefix up to prefix width.    
     
 - `?break` - break
   
-  If meats `?break` keyword ignores stream set with `?s`
+  If meats `?break` keyword, ignores stream set with `?s`
   and breaks with constructed message.
   
 - `?rsc` - reset counter
@@ -311,7 +312,7 @@ Same as format but with different syntax.
 but with colon (`:`) as the character
 to introduce the directive instead of tilde (`~`).
 
-You can omit stream argument - `t` is default.
+You can omit `stream` argument - `t` is default.
 
 `:nl` adds newline to the end.      
       
@@ -325,7 +326,7 @@ You can omit stream argument - `t` is default.
         [ [ :d | :d+ ] delimiter ] fmt-string fmt-arg*)`
          
 **DESCRIPTION**  
-Allows to apply one `fmt-string' to each argument of `fmt-arg*'.
+Allows to apply one `fmt-string` to each argument of `fmt-arg*`.
       
 `fmt-string` and `:s` and `:nl` options are the same as in `fmt`.
 
@@ -346,7 +347,7 @@ so you can specify `:%` as a delimiter to delimit with newline.
        (fmt-string fmt-arg*)+)`
 
 **DESCRIPTION**  
-Allows to have multiple fmt calls in one form.
+Allows to have multiple `fmt` calls in one form.
 
 `fmt-string` and `:s`, `:d` and `:d+`  options
 are the same as in `fmt`.
@@ -362,7 +363,7 @@ are the same as in `fmt`.
 
 **DESCRIPTION**  
 Prints args with `~S` formatting.
-You can pass `:-nl` as the first argument to avoid newline."
+You can pass `:-nl` as the first argument to avoid newline.
 
 <hr/>
 
