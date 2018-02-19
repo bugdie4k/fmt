@@ -2,6 +2,8 @@
 
 # tl;dr
 
+Debug print macros for Common Lisp.
+
 See [examples](EXAMPLES.md) or [tests](test/test.lisp).
 
 # Contents
@@ -14,6 +16,7 @@ See [examples](EXAMPLES.md) or [tests](test/test.lisp).
     - [`dbp` returns](#dbp-returns)
     - [`dbp` keywords](#dbp-keywords)
   - [`fmt` and friends](#fmt-and-friends)
+- [Dependencies](#dependencies)
 
 # Motivation
 
@@ -430,3 +433,7 @@ Same as break, but with different syntax.
 
 **DESCRIPTION**  
 `echo`'s breaking counterpart.
+
+# Dependencies
+
+[Alexandria](https://common-lisp.net/project/alexandria/)

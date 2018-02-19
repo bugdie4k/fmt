@@ -1,5 +1,5 @@
 (asdf:defsystem :fmt
-  :description "Debug printing improved"
+  :description "Debug print macros for Common Lisp"
   :author "Danylo Fedorov <fedorough@gmail.com>"
   :homepage "https://github.com/bugdie4k/fmt"
   :version "0.0.1"
