@@ -31,7 +31,7 @@
            (cons (form->regular-token (first args))
                  (lexer (rest args))))))
 
-  (defun collect-options-returns-eval-list (tokens options)
+  (defun collect-options/returns/eval-list (tokens options)
     (flet ((%eval-list (token)
              (awhen (generated-symbol token)
                (list it (form token)))))
@@ -41,18 +41,19 @@
          :with eval-list = nil
          :for token :in tokens
          :do
-           (cond ((typep token 'option-token)
-                  (setf (gethash (name token) options)
-                        (value token)))
-                 ((typep token 'return-token)
-                  (awhen (%eval-list token) (push it eval-list))
-                  (push token returns)
-                  (when (print? token)
-                    (push token cleaned-token-list)))
-                 ((typep token 'regular-token)
-                  (awhen (%eval-list token) (push it eval-list))
-                  (push token cleaned-token-list))
-                 (t (push token cleaned-token-list)))
+           (typecase token
+             (option-token
+              (setf (gethash (name token) options)
+                    (value token)))
+             (return-token
+              (awhen (%eval-list token) (push it eval-list))
+              (push token returns)
+              (when (print? token)
+                (push token cleaned-token-list)))
+             (regular-token
+              (awhen (%eval-list token) (push it eval-list))
+              (push token cleaned-token-list))
+             (t (push token cleaned-token-list)))
          :finally
            (return (values options returns (reverse eval-list)
                            (reverse cleaned-token-list))))))
@@ -75,18 +76,19 @@
                          (if (typep tok 'section-token) (rest tokens) tokens)))
                    (multiple-value-bind (taken-tokens rest-tokens)
                        (take-section tokens-to-take)
-                     (cond ((typep tok 'prefix-section)
-                            (setf prefix (append prefix taken-tokens)))
-                           ((typep tok 'message-section)
-                            (setf message (append message taken-tokens)))
-                           ;; message is the default
-                           (t (setf message (append message taken-tokens))))
+                     (typecase tok
+                       (prefix-section
+                        (setf prefix (append prefix taken-tokens)))
+                       (message-section
+                        (setf message (append message taken-tokens)))
+                       ;; message is the default
+                       (t (setf message (append message taken-tokens))))
                      (%parse rest-tokens))))))
         (%parse tokens))))
 
   (defun parser (tokens)
     (mv-let* (((options returns eval-list tokens)
-               (collect-options-returns-eval-list tokens
+               (collect-options/returns/eval-list tokens
                                                   (kw^default-options-ht)))
               ((prefix-tokens message-tokens)
                (divide-by-sections tokens)))

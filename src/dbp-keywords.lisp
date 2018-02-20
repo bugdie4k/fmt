@@ -22,7 +22,9 @@
     (unless (or (stringp form)
                 (characterp form)
                 (numberp form)
-                (keywordp form))
+                (keywordp form)
+                (and (listp form)
+                     (eq (first form) 'quote)))
       (gensym name)))
 
   (defun form->regular-token (form)
